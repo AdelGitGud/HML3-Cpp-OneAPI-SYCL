@@ -77,13 +77,13 @@ void OneDALManager::Run() {
     PrintDirectoryEntries("data");
     std::string tmp;
     std::cin >> tmp;
-    oneapi::dal::table data = GetTableFromCSV(tmp);
+    oneapi::dal::table data = GetTableFromFile(tmp);
     PrintBasicTableDescriptor(data);
 
     return;
 }
 
-oneapi::dal::table OneDALManager::GetTableFromCSV(const std::string& name) {
+oneapi::dal::table OneDALManager::GetTableFromFile(const std::string& name) {
     const std::string path = "data/";
 
     const std::string tryPath = path + name;
@@ -98,7 +98,7 @@ oneapi::dal::table OneDALManager::GetTableFromCSV(const std::string& name) {
     std::cout << "File \"" << name << "\" not found. Please try again:" << std::endl;
     std::string tmp;
     std::cin >> tmp;
-    return GetTableFromCSV(tmp);
+    return GetTableFromFile(tmp);
 }
 
 void OneDALManager::PrintBasicTableDescriptor(const oneapi::dal::table& table) {

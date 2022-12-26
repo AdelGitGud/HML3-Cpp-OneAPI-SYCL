@@ -25,7 +25,7 @@ public:
 
 private:
     // Get dal::table from .csv file
-    oneapi::dal::table GetTableFromCSV(const std::string& name);
+    oneapi::dal::table GetTableFromFile(const std::string& name);
 
     // Prints basic informations about a given dal::table
     void PrintBasicTableDescriptor(const oneapi::dal::table& table);
