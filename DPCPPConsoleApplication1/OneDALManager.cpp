@@ -1,9 +1,17 @@
 #include "OneDALManager.h"
+
+#include <vector>
+#include <string>
+#include <iomanip>
+#include <iostream>
+#include <fstream>
 #include <cassert>
 
+namespace onedal = oneapi::dal;
+
 // std::out overload
-std::ostream& operator<<(std::ostream& stream, const oneapi::dal::table& table) {
-    oneapi::dal::array arr = oneapi::dal::row_accessor<const float>(table).pull();
+std::ostream& operator<<(std::ostream& stream, const onedal::table& table) {
+    onedal::array arr = onedal::row_accessor<const float>(table).pull();
     const float* x = arr.get_data();
 
     if (table.get_row_count() <= 10) {
@@ -35,13 +43,13 @@ std::ostream& operator<<(std::ostream& stream, const oneapi::dal::table& table) 
     return stream;
 };
 
-static auto ExceptionHandler = [](sycl::exception_list e_list) {
+static auto ExceptionHandler = [](sycl::exception_list e_list) -> void {
     for (std::exception_ptr const& e : e_list) {
         try {
             std::rethrow_exception(e);
         }
         catch (std::exception const& e) {
-            std::cout << "Failure" << std::endl;
+            std::cout << "!!!Failure!!!" << std::endl;
             std::terminate();
         }
     }
@@ -50,59 +58,97 @@ static auto ExceptionHandler = [](sycl::exception_list e_list) {
 OneDALManager::OneDALManager() {
     AddDevice(&sycl::gpu_selector_v);
     AddDevice(&sycl::cpu_selector_v);
-
-    if (m_devices.empty()) {
-        std::cout << "No compatible device found, exiting." << std::endl;
-        std::terminate();
-    }
-
-    std::cout << "Select device:" << std::endl;
-    for (sycl::device device : m_devices) {
-        std::cout << '\t' << m_queues.size() << ") ";
-        m_queues.push_back(sycl::queue{ device, ExceptionHandler});
-        std::cout << m_queues.back().get_device().get_info<sycl::info::device::name>() << std::endl;
-    }
+    m.queues.reserve(m.devices.size());
 }
 
 OneDALManager::~OneDALManager() {
 }
 
 void OneDALManager::Run() {
+    if (m.devices.empty()) {
+        std::cout << "No compatible device found, exiting." << std::endl;
+        return;
+    }
+
+    // List selectable devices
+    std::cout << "Enter prefered device index:" << std::endl;
+    for (sycl::device device : m.devices) {
+        std::cout << '\t' << m.queues.size() << ") ";
+        m.queues.push_back(sycl::queue{ device, ExceptionHandler });
+        std::cout << m.queues.back().get_device().get_info<sycl::info::device::name>() << std::endl;
+    }
+
+start:
     // Select device
-    std::cin >> m_selectedDevice;
-    std::cout << "Running on:" << std::endl;
-    std::cout << '\t' << m_queues[m_selectedDevice].get_device().get_info<sycl::info::device::name>() << std::endl;
+    if (!(std::cin >> m.selectedDevice)) {
+        // Invalid input
+        if (std::cin.eof()) {
+            std::cout << "User aborted!" << std::endl;
+            return;
+        }
+        std::cout << "Please enter a number!";
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        goto start;
+    }
+    else if (m.selectedDevice >= m.devices.size()) {
+        // User inputed a number out of range
+        std::cout << "Device \"" << m.selectedDevice << "\" not found. Please enter a number between 0 and " << m.devices.size() - 1 << ":" << std::endl;
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        goto start;
+    }
+    else {
+        // Device selected successfully
+        std::cout << "Running on device:" << std::endl;
+        std::cout << '\t' << m.queues[m.selectedDevice].get_device().get_info<sycl::info::device::name>() << std::endl;
+    }
 
     // Load and prints selected data
     PrintDirectoryEntries("data");
     std::string tmp;
     std::cin >> tmp;
-    oneapi::dal::table data = GetTableFromFile(tmp);
-    PrintBasicTableDescriptor(data);
-
-    return;
+    if (std::cin.eof()) {
+        std::cout << "User aborted!" << std::endl;
+        return;
+    }
+    std::optional<onedal::table> data = GetTableFromFile(tmp);
+    if (data.has_value()) {
+        // Everything is good, proceeding
+        PrintBasicTableDescriptor(data.value());
+    }
+    else {
+        // User aborted
+        return;
+    }
 }
 
-oneapi::dal::table OneDALManager::GetTableFromFile(const std::string& name) {
+std::optional<onedal::table> OneDALManager::GetTableFromFile(const std::string& name) {
     const std::string path = "data/";
 
     const std::string tryPath = path + name;
     if (CheckFile(tryPath)) {
-        oneapi::dal::csv::data_source dataSource{tryPath};
+        onedal::csv::data_source dataSource{tryPath};
         dataSource.set_delimiter(',');
         dataSource.set_parse_header(true);
 
-        return oneapi::dal::read<oneapi::dal::table>(m_queues[m_selectedDevice], dataSource); // Throws exception in debug when running on the gpu. Doesnt seem to cause issue in current testing cases however.
+        return onedal::read<onedal::table>(m.queues[m.selectedDevice], dataSource); // Throws exception in debug when running on the gpu. Doesnt seem to cause issue in current testing cases however.
     }
 
     std::cout << "File \"" << name << "\" not found. Please try again:" << std::endl;
     std::string tmp;
     std::cin >> tmp;
+    if (std::cin.eof()) {
+        std::cout << "User aborted!" << std::endl;
+        return {};
+    }
     return GetTableFromFile(tmp);
 }
 
-void OneDALManager::PrintBasicTableDescriptor(const oneapi::dal::table& table) {
-    const oneapi::dal::basic_statistics::compute_result result = oneapi::dal::compute(m_queues[m_selectedDevice], oneapi::dal::basic_statistics::descriptor{}, table);
+void OneDALManager::PrintBasicTableDescriptor(const onedal::table& table) {
+    const onedal::basic_statistics::compute_result result = onedal::compute(m.queues[m.selectedDevice], onedal::basic_statistics::descriptor{}, table);
 
     std::cout << "Column count: "
         << table.get_column_count() << std::endl
@@ -129,8 +175,8 @@ void Cut() {
 }
 
 template <typename T>
-void StratifiedShuffledSplit(const oneapi::dal::table& table, float ratio, int seed,
-    oneapi::dal::table& first, oneapi::dal::table& second) {
+void StratifiedShuffledSplit(const onedal::table& table, float ratio, int seed,
+    onedal::table& first, onedal::table& second) {
     // Get the number of rows in the table
     const int num_rows = table.get_row_count();
 
@@ -143,8 +189,8 @@ void StratifiedShuffledSplit(const oneapi::dal::table& table, float ratio, int s
     const int num_classes = static_cast<int>(std::set<T>(labels.begin(), labels.end()).size());
 
     // Initialize the output tables
-    first = oneapi::dal::table(num_rows);
-    second = oneapi::dal::table(num_rows);
+    first = onedal::table(num_rows);
+    second = onedal::table(num_rows);
 
     // Shuffle the rows
     std::mt19937 rng(seed);
@@ -153,7 +199,7 @@ void StratifiedShuffledSplit(const oneapi::dal::table& table, float ratio, int s
     // Split the rows into two tables based on the ratio
     int split_index = static_cast<int>(num_rows * ratio);
     for (int i = 0; i < num_rows; i++) {
-        oneapi::dal::table& split = (i < split_index) ? first : second;
+        onedal::table& split = (i < split_index) ? first : second;
         //split.set_column("label", labels[i]);
         // Set other columns as needed
     }

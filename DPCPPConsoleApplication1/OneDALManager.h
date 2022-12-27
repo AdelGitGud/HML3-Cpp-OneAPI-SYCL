@@ -4,16 +4,10 @@
 #define ONEDAL_DATA_PARALLEL
 #endif
 
-#include <vector>
-#include <string>
-#include <iomanip>
-#include <iostream>
-#include <fstream>
-#include <filesystem>
-
+#include "oneapi/dal.hpp"
 #include <sycl/sycl.hpp>
 
-#include "oneapi/dal.hpp"
+#include <filesystem>
 
 class OneDALManager
 {
@@ -25,7 +19,7 @@ public:
 
 private:
     // Get dal::table from .csv file
-    oneapi::dal::table GetTableFromFile(const std::string& name);
+    std::optional<oneapi::dal::table> GetTableFromFile(const std::string& name);
 
     // Prints basic informations about a given dal::table
     void PrintBasicTableDescriptor(const oneapi::dal::table& table);
@@ -43,7 +37,7 @@ private:
 
     inline void AddDevice(int (*selector)(const sycl::device&)) {
         try {
-            m_devices.push_back(sycl::ext::oneapi::detail::select_device(selector));
+            m.devices.push_back(sycl::ext::oneapi::detail::select_device(selector));
         }
         catch (...) {
             return;
@@ -51,8 +45,10 @@ private:
     };
 
 private:
-    std::vector<sycl::device> m_devices;
-    std::vector<sycl::queue> m_queues;
-    uint64_t m_selectedDevice;
+    struct M {
+        std::vector<sycl::device> devices = {};
+        std::vector<sycl::queue> queues = {};
+        uint64_t selectedDevice = 0;
+    }m;
 };
 
