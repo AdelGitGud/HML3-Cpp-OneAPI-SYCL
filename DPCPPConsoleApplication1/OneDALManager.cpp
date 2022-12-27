@@ -43,7 +43,7 @@ std::ostream& operator<<(std::ostream& stream, const onedal::table& table) {
     return stream;
 };
 
-static auto ExceptionHandler = [](sycl::exception_list e_list) -> void {
+static auto exceptionHandler = [](sycl::exception_list e_list)->void {
     for (std::exception_ptr const& e : e_list) {
         try {
             std::rethrow_exception(e);
@@ -56,29 +56,27 @@ static auto ExceptionHandler = [](sycl::exception_list e_list) -> void {
 };
 
 OneDALManager::OneDALManager() {
-    AddDevice(&sycl::gpu_selector_v);
-    AddDevice(&sycl::cpu_selector_v);
-    m.queues.reserve(m.devices.size());
+    m.queues.reserve(2);
+    AddDevice(&sycl::gpu_selector_v, exceptionHandler);
+    AddDevice(&sycl::cpu_selector_v, exceptionHandler);
 }
 
 OneDALManager::~OneDALManager() {
 }
 
 void OneDALManager::Run() {
-    if (m.devices.empty()) {
+    if (m.queues.empty()) {
         std::cout << "No compatible device found, exiting." << std::endl;
         return;
     }
 
+start:
     // List selectable devices and prepare queues
     std::cout << "Enter prefered device index:" << std::endl;
-    for (sycl::device device : m.devices) {
-        std::cout << '\t' << m.queues.size() << ") ";
-        m.queues.push_back(sycl::queue{ device, ExceptionHandler });
-        std::cout << m.queues.back().get_device().get_info<sycl::info::device::name>() << std::endl;
+    for (uint64_t i = 0; i < m.queues.size(); i++) {
+        std::cout << '\t' << i << ") " << m.queues[i].get_device().get_info<sycl::info::device::name>() << std::endl;
     }
 
-start:
     // Select device
     if (!(std::cin >> m.selectedDevice)) {
         // Invalid input
@@ -92,9 +90,9 @@ start:
 
         goto start;
     }
-    else if (m.selectedDevice >= m.devices.size()) {
+    else if (m.selectedDevice >= m.queues.size()) {
         // User inputed a number out of range
-        std::cout << "Device \"" << m.selectedDevice << "\" not found. Please enter a number between 0 and " << m.devices.size() - 1 << ":" << std::endl;
+        std::cout << "Device \"" << m.selectedDevice << "\" not found. Please enter a number between 0 and " << m.queues.size() - 1 << ":" << std::endl;
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
@@ -123,10 +121,6 @@ start:
         << "\t[N]o" << std::endl;
     const char exitInput = GetUserStringInput()[0];
     if (tolower(exitInput) != 'y') {
-        std::cout << "Enter prefered device index:" << std::endl;
-        for (uint64_t i = 0; i < m.queues.size(); i++) {
-            std::cout << '\t' << i << ") " << m.queues[i].get_device().get_info<sycl::info::device::name>() << std::endl;
-        }
         goto start;
     }
 }

@@ -24,9 +24,9 @@ private:
     // Prints basic informations about a given dal::table
     void PrintBasicTableDescriptor(const oneapi::dal::table& table);
 
-    inline void AddDevice(int (*selector)(const sycl::device&)) {
+    inline void AddDevice(int (*selector)(const sycl::device&), const std::function<void(sycl::exception_list)>& AsyncHandler) {
         try {
-            m.devices.push_back(sycl::ext::oneapi::detail::select_device(selector));
+            m.queues.push_back(sycl::queue{ sycl::ext::oneapi::detail::select_device(selector), AsyncHandler });
         }
         catch (...) {
             return;
@@ -58,7 +58,6 @@ private:
 
 private:
     struct M {
-        std::vector<sycl::device> devices = {};
         std::vector<sycl::queue> queues = {};
         uint64_t selectedDevice = 0;
     }m;
