@@ -19,10 +19,19 @@ public:
 
 private:
     // Get dal::table from .csv file
-    std::optional<oneapi::dal::table> GetTableFromFile(const std::string& name);
+    const std::optional<const oneapi::dal::table> GetTableFromFile(const std::string& name);
 
     // Prints basic informations about a given dal::table
     void PrintBasicTableDescriptor(const oneapi::dal::table& table);
+
+    inline void AddDevice(int (*selector)(const sycl::device&)) {
+        try {
+            m.devices.push_back(sycl::ext::oneapi::detail::select_device(selector));
+        }
+        catch (...) {
+            return;
+        }
+    };
 
     inline bool CheckFile(const std::string& name) {
         return std::ifstream{ name }.good();
@@ -35,12 +44,15 @@ private:
         }
     };
 
-    inline void AddDevice(int (*selector)(const sycl::device&)) {
-        try {
-            m.devices.push_back(sycl::ext::oneapi::detail::select_device(selector));
+    inline const std::string GetUserStringInput() {
+        std::string tmp;
+        std::cin >> tmp;
+        if (std::cin.eof()) {
+            std::cout << "User aborted!" << std::endl;
+            return {};
         }
-        catch (...) {
-            return;
+        else {
+            return tmp;
         }
     };
 

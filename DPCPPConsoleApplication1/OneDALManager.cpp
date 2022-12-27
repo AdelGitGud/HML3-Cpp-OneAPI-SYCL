@@ -70,7 +70,7 @@ void OneDALManager::Run() {
         return;
     }
 
-    // List selectable devices
+    // List selectable devices and prepare queues
     std::cout << "Enter prefered device index:" << std::endl;
     for (sycl::device device : m.devices) {
         std::cout << '\t' << m.queues.size() << ") ";
@@ -86,7 +86,7 @@ start:
             std::cout << "User aborted!" << std::endl;
             return;
         }
-        std::cout << "Please enter a number!";
+        std::cout << "Please enter a number!" << std::endl;
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
@@ -100,32 +100,38 @@ start:
 
         goto start;
     }
-    else {
-        // Device selected successfully
-        std::cout << "Running on device:" << std::endl;
-        std::cout << '\t' << m.queues[m.selectedDevice].get_device().get_info<sycl::info::device::name>() << std::endl;
-    }
+    // Device selected successfully, proceeding
+    std::cout << "Running on device:" << std::endl;
+    std::cout << '\t' << m.queues[m.selectedDevice].get_device().get_info<sycl::info::device::name>() << std::endl;
 
-    // Load and prints selected data
+    // Prints and loads selected data
     PrintDirectoryEntries("data");
-    std::string tmp;
-    std::cin >> tmp;
-    if (std::cin.eof()) {
-        std::cout << "User aborted!" << std::endl;
+    const std::string& userInput = GetUserStringInput();
+    if (userInput.empty()) {
         return;
     }
-    std::optional<onedal::table> data = GetTableFromFile(tmp);
-    if (data.has_value()) {
-        // Everything is good, proceeding
-        PrintBasicTableDescriptor(data.value());
-    }
-    else {
-        // User aborted
+    const std::optional<const onedal::table>& data = GetTableFromFile(userInput);
+    if (!data.has_value()) {
         return;
+    }
+    // Everything is good, proceeding to compute phase
+    PrintBasicTableDescriptor(data.value());
+
+    // Restart to device selection if user doesnt wish to exist
+    std::cout << "Exit?" << std::endl
+        << "\t[Y]es" << std::endl
+        << "\t[N]o" << std::endl;
+    const char exitInput = GetUserStringInput()[0];
+    if (tolower(exitInput) != 'y') {
+        std::cout << "Enter prefered device index:" << std::endl;
+        for (uint64_t i = 0; i < m.queues.size(); i++) {
+            std::cout << '\t' << i << ") " << m.queues[i].get_device().get_info<sycl::info::device::name>() << std::endl;
+        }
+        goto start;
     }
 }
 
-std::optional<onedal::table> OneDALManager::GetTableFromFile(const std::string& name) {
+const std::optional<const onedal::table> OneDALManager::GetTableFromFile(const std::string& name) {
     const std::string path = "data/";
 
     const std::string tryPath = path + name;
@@ -134,17 +140,15 @@ std::optional<onedal::table> OneDALManager::GetTableFromFile(const std::string& 
         dataSource.set_delimiter(',');
         dataSource.set_parse_header(true);
 
-        return onedal::read<onedal::table>(m.queues[m.selectedDevice], dataSource); // Throws exception in debug when running on the gpu. Doesnt seem to cause issue in current testing cases however.
+        return onedal::read<const onedal::table>(m.queues[m.selectedDevice], dataSource); // Throws exception in debug when running on the gpu. Doesnt seem to cause issue in current testing cases however.
     }
 
     std::cout << "File \"" << name << "\" not found. Please try again:" << std::endl;
-    std::string tmp;
-    std::cin >> tmp;
-    if (std::cin.eof()) {
-        std::cout << "User aborted!" << std::endl;
+    const std::string& userInput = GetUserStringInput();
+    if (userInput.empty()) {
         return {};
     }
-    return GetTableFromFile(tmp);
+    return GetTableFromFile(userInput);
 }
 
 void OneDALManager::PrintBasicTableDescriptor(const onedal::table& table) {
