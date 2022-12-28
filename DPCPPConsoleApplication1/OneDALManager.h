@@ -18,8 +18,10 @@ public:
     void Run();
 
 private:
+    bool ListAndSelectDevices();
+
     // Get dal::table from .csv file
-    const std::optional<const oneapi::dal::table> GetTableFromFile(const std::string& name);
+    const std::optional<const oneapi::dal::table> GetTableFromFile(const std::string& name, const std::string& path = "data/");
 
     // Prints basic informations about a given dal::table
     void PrintBasicTableDescriptor(const oneapi::dal::table& table);
@@ -27,8 +29,7 @@ private:
     inline void AddDevice(int (*selector)(const sycl::device&), const std::function<void(sycl::exception_list)>& AsyncHandler) {
         try {
             m.queues.push_back(sycl::queue{ sycl::ext::oneapi::detail::select_device(selector), AsyncHandler });
-        }
-        catch (...) {
+        } catch (...) {
             return;
         }
     };
@@ -50,14 +51,13 @@ private:
         if (std::cin.eof()) {
             std::cout << "User aborted!" << std::endl;
             return {};
-        }
-        else {
+        } else {
             return tmp;
         }
     };
 
 private:
-    struct M {
+    struct Members {
         std::vector<sycl::queue> queues = {};
         uint64_t selectedDevice = 0;
     }m;
