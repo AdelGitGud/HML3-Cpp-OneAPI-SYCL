@@ -22,24 +22,24 @@ std::ostream& operator<<(std::ostream& stream, const onedal::table& table) {
     const float* x = arr.get_data();
 
     if (table.get_row_count() <= MAXPRINT) {
-        for (std::int64_t i = 0; i < table.get_row_count(); i++) {
-            for (std::int64_t j = 0; j < table.get_column_count(); j++) {
+        for (uint64_t i = 0; i < table.get_row_count(); i++) {
+            for (uint64_t j = 0; j < table.get_column_count(); j++) {
                 std::cout << std::setw(10) << std::setiosflags(std::ios::fixed)
                     << std::setprecision(3) << x[i * table.get_column_count() + j];
             }
             std::cout << std::endl;
         }
     } else {
-        for (std::int64_t i = 0; i < HALFPRINT; i++) {
-            for (std::int64_t j = 0; j < table.get_column_count(); j++) {
+        for (uint64_t i = 0; i < HALFPRINT; i++) {
+            for (uint64_t j = 0; j < table.get_column_count(); j++) {
                 std::cout << std::setw(10) << std::setiosflags(std::ios::fixed)
                     << std::setprecision(3) << x[i * table.get_column_count() + j];
             }
             std::cout << std::endl;
         }
         std::cout << "..." << (table.get_row_count() - MAXPRINT) << " lines skipped..." << std::endl;
-        for (std::int64_t i = table.get_row_count() - HALFPRINT; i < table.get_row_count(); i++) {
-            for (std::int64_t j = 0; j < table.get_column_count(); j++) {
+        for (uint64_t i = table.get_row_count() - HALFPRINT; i < table.get_row_count(); i++) {
+            for (uint64_t j = 0; j < table.get_column_count(); j++) {
                 std::cout << std::setw(10) << std::setiosflags(std::ios::fixed)
                     << std::setprecision(3) << x[i * table.get_column_count() + j];
             }
@@ -88,6 +88,7 @@ start:
     }
     PrintBasicTableDescriptor(data.value());
 
+    // ------ WARNING: 69IQ CODING BELOW ------
     // Create allocator for device
     TABLEALLOC myAlloc(m.queues[m.selectedDevice]);
 
@@ -100,7 +101,7 @@ start:
     const float* hostPtr = arr.get_data();
 
     // Copy income house data to income category array (in the dirtiest way possible)
-    for (int i = 0; i < data.value().get_row_count(); i++) {
+    for (uint64_t i = 0; i < data.value().get_row_count(); i++) {
         if (hostPtr[i * data.value().get_column_count() + INCOMECAT] < CATCUTOFF) {
             incomeCat[i] = hostPtr[i * data.value().get_column_count() + INCOMECAT];
         } else {
@@ -118,9 +119,8 @@ start:
 
     // Followed by this ugly adjustment because I have not learned how get the correct values from above without crashing yet...
     uint64_t cat1 = 0, cat2 = 0, cat3 = 0, cat4 = 0, cat5 = 0;
-    for (int i = 0; i < data.value().get_row_count(); i++) {
-        uint64_t value = std::floor(incomeCat[i]);
-        switch (value) {
+    for (uint64_t i = 0; i < data.value().get_row_count(); i++) {
+        switch ((uint64_t)incomeCat[i]) {
         case 0:
             cat1++;
             break;
@@ -147,6 +147,7 @@ start:
         << '\t' << (float)cat3 / data.value().get_row_count() * 100.0 << "%"
         << '\t' << (float)cat4 / data.value().get_row_count() * 100.0 << "%"
         << '\t' << (float)cat5 / data.value().get_row_count() * 100.0 << "%" << std::endl;
+    // ------ Back 420IQ coding ------
 
     // Restart to device selection if user doesnt wish to exist
     char exitInput;
