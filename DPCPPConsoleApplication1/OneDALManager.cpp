@@ -11,6 +11,9 @@ namespace onedal = oneapi::dal;
 
 #define MAXPRINT    10
 #define HALFPRINT   5
+#define INCOMECAT   7
+#define CATCUTOFF   6.0
+#define CATBINSSTEP 1.5
 typedef sycl::usm_allocator<float, sycl::usm::alloc::shared> TABLEALLOC;
 
 // std::out overload
@@ -78,61 +81,72 @@ start:
     }
 
     // Prints and loads selected data
-   PrintDirectoryEntries("data");
+    PrintDirectoryEntries("data");
     const std::optional<const onedal::table>& data = GetTableFromFile(GetUserStringInput());
     if (!data.has_value()) { // User aborted
         return;
     }
+    PrintBasicTableDescriptor(data.value());
 
-    // Create allocator for device associated with q
+    // Create allocator for device
     TABLEALLOC myAlloc(m.queues[m.selectedDevice]);
 
-    // Create std vectors with the allocator
-    std::vector<float, TABLEALLOC>
-        a(data.value().get_row_count(), myAlloc);
+    // Create std vectors with the allocator and onedal array to play with data
+    std::vector<float, TABLEALLOC> incomeCat(data.value().get_row_count(), myAlloc);
     onedal::array arr = onedal::row_accessor<const float>(data.value()).pull();
 
-    // Get pointer to vector data for access in kernel
-    const float* A = arr.get_data();
-    float* B = a.data();
+    // Get pointer to vector data for access in device and another for copying the housing income data
+    float* devicePtr = incomeCat.data();
+    const float* hostPtr = arr.get_data();
 
+    // Copy income house data to income category array (in the dirtiest way possible)
     for (int i = 0; i < data.value().get_row_count(); i++) {
-        if (A[i * data.value().get_column_count() + 7] < 6.0)
-            a[i] = A[i * data.value().get_column_count() + 7];
-        else
-            a[i] = 6.0;
+        if (hostPtr[i * data.value().get_column_count() + INCOMECAT] < CATCUTOFF) {
+            incomeCat[i] = hostPtr[i * data.value().get_column_count() + INCOMECAT];
+        } else {
+            incomeCat[i] = CATCUTOFF;
+        }
     }
 
+    // Probably the most useless hardware accelleration ever
     m.queues[m.selectedDevice].submit([&](sycl::handler& h) {
         h.parallel_for(sycl::range<1>(data.value().get_row_count()),
         [=](sycl::id<1> idx) {
-                B[idx] /= 1.5 ;
+                devicePtr[idx] /= CATBINSSTEP;
             });
     }).wait();
 
+    // Followed by this ugly adjustment because I have not learned how get the correct values from above without crashing yet...
     uint64_t cat1 = 0, cat2 = 0, cat3 = 0, cat4 = 0, cat5 = 0;
     for (int i = 0; i < data.value().get_row_count(); i++) {
-        uint64_t value = std::floor(a[i] + 1.0);
-        switch (value)
-        {
-        case 1:
+        uint64_t value = std::floor(incomeCat[i]);
+        switch (value) {
+        case 0:
             cat1++;
             break;
-        case 2:
+        case 1:
             cat2++;
             break;
-        case 3:
+        case 2:
             cat3++;
             break;
-        case 4:
+        case 3:
             cat4++;
             break;
-        case 5:
+        case 4:
             cat5++;
             break;
         }
     }
-    std::cout << cat1 << '\t' << cat2 << '\t' << cat3 << '\t' << cat4 << '\t' << cat5 << std::endl;
+    std::cout << "Housing income categories:" << std::endl;
+    std::cout << '\t' << "cat1" << '\t' << "cat2" << '\t' << "cat3" << '\t' << "cat4" << '\t' << "cat5" << std::endl;
+    std::cout << '\t' << cat1 << '\t' << cat2 << '\t' << cat3 << '\t' << cat4 << '\t' << cat5 << std::endl;
+    std::cout << std::fixed << std::setprecision(2)
+        << '\t' <<(float)cat1 / data.value().get_row_count() * 100.0 << "%"
+        << '\t' << (float)cat2 / data.value().get_row_count() * 100.0 << "%"
+        << '\t' << (float)cat3 / data.value().get_row_count() * 100.0 << "%"
+        << '\t' << (float)cat4 / data.value().get_row_count() * 100.0 << "%"
+        << '\t' << (float)cat5 / data.value().get_row_count() * 100.0 << "%" << std::endl;
 
     // Restart to device selection if user doesnt wish to exist
     char exitInput;
