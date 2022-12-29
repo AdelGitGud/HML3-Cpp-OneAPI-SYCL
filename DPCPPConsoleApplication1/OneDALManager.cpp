@@ -11,6 +11,7 @@ namespace onedal = oneapi::dal;
 
 #define MAXPRINT    10
 #define HALFPRINT   5
+typedef sycl::usm_allocator<float, sycl::usm::alloc::shared> TABLEALLOC;
 
 // std::out overload
 std::ostream& operator<<(std::ostream& stream, const onedal::table& table) {
@@ -77,13 +78,61 @@ start:
     }
 
     // Prints and loads selected data
-    PrintDirectoryEntries("data");
+   PrintDirectoryEntries("data");
     const std::optional<const onedal::table>& data = GetTableFromFile(GetUserStringInput());
     if (!data.has_value()) { // User aborted
         return;
     }
 
-    PrintBasicTableDescriptor(data.value());
+    // Create allocator for device associated with q
+    TABLEALLOC myAlloc(m.queues[m.selectedDevice]);
+
+    // Create std vectors with the allocator
+    std::vector<float, TABLEALLOC>
+        a(data.value().get_row_count(), myAlloc);
+    onedal::array arr = onedal::row_accessor<const float>(data.value()).pull();
+
+    // Get pointer to vector data for access in kernel
+    const float* A = arr.get_data();
+    float* B = a.data();
+
+    for (int i = 0; i < data.value().get_row_count(); i++) {
+        if (A[i * data.value().get_column_count() + 7] < 6.0)
+            a[i] = A[i * data.value().get_column_count() + 7];
+        else
+            a[i] = 6.0;
+    }
+
+    m.queues[m.selectedDevice].submit([&](sycl::handler& h) {
+        h.parallel_for(sycl::range<1>(data.value().get_row_count()),
+        [=](sycl::id<1> idx) {
+                B[idx] /= 1.5 ;
+            });
+    }).wait();
+
+    uint64_t cat1 = 0, cat2 = 0, cat3 = 0, cat4 = 0, cat5 = 0;
+    for (int i = 0; i < data.value().get_row_count(); i++) {
+        uint64_t value = std::floor(a[i] + 1.0);
+        switch (value)
+        {
+        case 1:
+            cat1++;
+            break;
+        case 2:
+            cat2++;
+            break;
+        case 3:
+            cat3++;
+            break;
+        case 4:
+            cat4++;
+            break;
+        case 5:
+            cat5++;
+            break;
+        }
+    }
+    std::cout << cat1 << '\t' << cat2 << '\t' << cat3 << '\t' << cat4 << '\t' << cat5 << std::endl;
 
     // Restart to device selection if user doesnt wish to exist
     char exitInput;
