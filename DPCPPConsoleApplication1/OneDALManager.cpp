@@ -94,13 +94,13 @@ start:
     TABLEALLOC myAlloc(m.queues[m.selectedDevice]);
 
     // Create std vectors with the allocator and onedal array to play with data
-    std::vector<uint64_t, TABLEALLOC> incomeCat(data.value().get_row_count(), myAlloc);
-    onedal::array<float> arr = onedal::row_accessor<const float>(data.value()).pull();
+    std::vector<uint64_t, TABLEALLOC> incomeSplit(data.value().get_row_count(), myAlloc);
+    onedal::array<float> mutArray = onedal::row_accessor<const float>(data.value()).pull();
 
     // Haha data go brrr
     m.queues[m.selectedDevice].submit([&](sycl::handler& h) {
-        uint64_t* incomeSplitPtr = incomeCat.data();
-        const float* rawIncomePtr = arr.need_mutable_data().get_mutable_data();
+        uint64_t* incomeSplitPtr = incomeSplit.data();
+        const float* rawIncomePtr = mutArray.need_mutable_data().get_mutable_data();
         h.parallel_for(sycl::range<1>(data.value().get_row_count()), [=](sycl::id<1> idx) {
             incomeSplitPtr[idx] = rawIncomePtr[idx * NBROFCAT + INCOMECAT] / CATBINSSTEP;
         });
@@ -109,18 +109,18 @@ start:
     // Count and print income category split
     uint64_t cat[5] = {0};
     for (uint64_t i = 0; i < data.value().get_row_count(); i++) {
-        switch (incomeCat[i]) {
+        switch (incomeSplit[i]) {
         case 0:
-            cat[incomeCat[i]]++;
+            cat[incomeSplit[i]]++;
             break;
         case 1:
-            cat[incomeCat[i]]++;
+            cat[incomeSplit[i]]++;
             break;
         case 2:
-            cat[incomeCat[i]]++;
+            cat[incomeSplit[i]]++;
             break;
         case 3:
-            cat[incomeCat[i]]++;
+            cat[incomeSplit[i]]++;
             break;
         default:
             cat[4]++;
