@@ -9,6 +9,8 @@
 
 #include <filesystem>
 
+#include "HOMLData.h"
+
 class OneDALManager
 {
 public:
