@@ -95,6 +95,7 @@
     <ClCompile Include="OneDALManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="HOMLData.h" />
     <ClInclude Include="OneDALManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
