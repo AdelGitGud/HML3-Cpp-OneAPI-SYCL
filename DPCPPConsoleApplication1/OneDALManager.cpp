@@ -11,10 +11,11 @@ namespace onedal = oneapi::dal;
 
 #define MAXPRINT    10
 #define HALFPRINT   5
+#define NBROFCAT    10
 #define INCOMECAT   7
-#define CATCUTOFF   6.0
-#define CATBINSSTEP 1.5
-typedef sycl::usm_allocator<float, sycl::usm::alloc::shared> TABLEALLOC;
+#define CATCUTOFF   6.0f
+#define CATBINSSTEP 1.5f
+typedef sycl::usm_allocator<uint64_t, sycl::usm::alloc::shared> TABLEALLOC;
 
 // std::out overload
 std::ostream& operator<<(std::ostream& stream, const onedal::table& table) {
@@ -62,8 +63,8 @@ static auto exceptionHandler = [](sycl::exception_list e_list)->void {
 
 OneDALManager::OneDALManager() {
     m.queues.reserve(2);
-    AddDevice(&sycl::gpu_selector_v, exceptionHandler);
     AddDevice(&sycl::cpu_selector_v, exceptionHandler);
+    AddDevice(&sycl::gpu_selector_v, exceptionHandler);
 }
 
 OneDALManager::~OneDALManager() {
@@ -88,66 +89,56 @@ start:
     }
     PrintBasicTableDescriptor(data.value());
 
-    // ------ WARNING: 69IQ CODING BELOW ------
+    // ------ EXPERIMENTAL: Dont understand what I'm doing ------
     // Create allocator for device
     TABLEALLOC myAlloc(m.queues[m.selectedDevice]);
 
     // Create std vectors with the allocator and onedal array to play with data
-    std::vector<float, TABLEALLOC> incomeCat(data.value().get_row_count(), myAlloc);
-    onedal::array arr = onedal::row_accessor<const float>(data.value()).pull();
+    std::vector<uint64_t, TABLEALLOC> incomeCat(data.value().get_row_count(), myAlloc);
+    onedal::array<float> arr = onedal::row_accessor<const float>(data.value()).pull();
 
-    // Get pointer to vector data for access in device and another for copying the housing income data
-    float* devicePtr = incomeCat.data();
-    const float* hostPtr = arr.get_data();
-
-    // Copy income house data to income category array (in the dirtiest way possible)
-    for (uint64_t i = 0; i < data.value().get_row_count(); i++) {
-        if (hostPtr[i * data.value().get_column_count() + INCOMECAT] < CATCUTOFF) {
-            incomeCat[i] = hostPtr[i * data.value().get_column_count() + INCOMECAT];
-        } else {
-            incomeCat[i] = CATCUTOFF;
-        }
-    }
-
-    // Probably the most useless hardware accelleration ever
+    // Haha data go brrr
     m.queues[m.selectedDevice].submit([&](sycl::handler& h) {
-        h.parallel_for(sycl::range<1>(data.value().get_row_count()),
-        [=](sycl::id<1> idx) {
-                devicePtr[idx] /= CATBINSSTEP;
-            });
+        uint64_t* incomeSplitPtr = incomeCat.data();
+        const float* rawIncomePtr = arr.need_mutable_data().get_mutable_data();
+        h.parallel_for(sycl::range<1>(data.value().get_row_count()), [=](sycl::id<1> idx) {
+            incomeSplitPtr[idx] = rawIncomePtr[idx * NBROFCAT + INCOMECAT] / CATBINSSTEP;
+        });
     }).wait();
 
-    // Followed by this ugly adjustment because I have not learned how get the correct values from above without crashing yet...
-    uint64_t cat1 = 0, cat2 = 0, cat3 = 0, cat4 = 0, cat5 = 0;
+    // Count and print income category split
+    uint64_t cat[5] = {0};
     for (uint64_t i = 0; i < data.value().get_row_count(); i++) {
-        switch ((uint64_t)incomeCat[i]) {
+        switch (incomeCat[i]) {
         case 0:
-            cat1++;
+            cat[incomeCat[i]]++;
             break;
         case 1:
-            cat2++;
+            cat[incomeCat[i]]++;
             break;
         case 2:
-            cat3++;
+            cat[incomeCat[i]]++;
             break;
         case 3:
-            cat4++;
+            cat[incomeCat[i]]++;
             break;
-        case 4:
-            cat5++;
+        default:
+            cat[4]++;
             break;
         }
     }
-    std::cout << "Housing income categories:" << std::endl;
-    std::cout << '\t' << "cat1" << '\t' << "cat2" << '\t' << "cat3" << '\t' << "cat4" << '\t' << "cat5" << std::endl;
-    std::cout << '\t' << cat1 << '\t' << cat2 << '\t' << cat3 << '\t' << cat4 << '\t' << cat5 << std::endl;
-    std::cout << std::fixed << std::setprecision(2)
-        << '\t' <<(float)cat1 / data.value().get_row_count() * 100.0 << "%"
-        << '\t' << (float)cat2 / data.value().get_row_count() * 100.0 << "%"
-        << '\t' << (float)cat3 / data.value().get_row_count() * 100.0 << "%"
-        << '\t' << (float)cat4 / data.value().get_row_count() * 100.0 << "%"
-        << '\t' << (float)cat5 / data.value().get_row_count() * 100.0 << "%" << std::endl;
-    // ------ Back 420IQ coding ------
+    std::cout << "Housing income split:" << std::endl;
+    std::cout << '\t' << "cat0" << '\t' << "cat1" << '\t' << "cat2" << '\t' << "cat3" << '\t' << "cat4" << std::endl;
+    for (uint64_t i = 0; i < 5; i++) {
+        std::cout << '\t' << cat[i];
+    }
+    std::cout << std::endl;
+    std::cout << std::fixed << std::setprecision(2);
+    for (uint64_t i = 0; i < 5; i++) {
+        std::cout << '\t' << (float)cat[i] / data.value().get_row_count() * 100.0 << "%";
+    }
+    std::cout << std::endl;
+    // ------ EXP END ------
 
     // Restart to device selection if user doesnt wish to exist
     char exitInput;
