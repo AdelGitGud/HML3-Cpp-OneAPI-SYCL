@@ -11,6 +11,10 @@ namespace onedal = oneapi::dal;
 
 #define MAXPRINT    10
 #define HALFPRINT   5
+#define NBROFCAT    10
+#define INCOMECAT   7
+#define CATCUTOFF   6.0f
+#define CATBINSSTEP 1.5f
 
 // std::out overload
 std::ostream& operator<<(std::ostream& stream, const onedal::table& table) {
@@ -18,24 +22,24 @@ std::ostream& operator<<(std::ostream& stream, const onedal::table& table) {
     const float* x = arr.get_data();
 
     if (table.get_row_count() <= MAXPRINT) {
-        for (std::int64_t i = 0; i < table.get_row_count(); i++) {
-            for (std::int64_t j = 0; j < table.get_column_count(); j++) {
+        for (uint64_t i = 0; i < table.get_row_count(); i++) {
+            for (uint64_t j = 0; j < table.get_column_count(); j++) {
                 std::cout << std::setw(10) << std::setiosflags(std::ios::fixed)
                     << std::setprecision(3) << x[i * table.get_column_count() + j];
             }
             std::cout << std::endl;
         }
     } else {
-        for (std::int64_t i = 0; i < HALFPRINT; i++) {
-            for (std::int64_t j = 0; j < table.get_column_count(); j++) {
+        for (uint64_t i = 0; i < HALFPRINT; i++) {
+            for (uint64_t j = 0; j < table.get_column_count(); j++) {
                 std::cout << std::setw(10) << std::setiosflags(std::ios::fixed)
                     << std::setprecision(3) << x[i * table.get_column_count() + j];
             }
             std::cout << std::endl;
         }
         std::cout << "..." << (table.get_row_count() - MAXPRINT) << " lines skipped..." << std::endl;
-        for (std::int64_t i = table.get_row_count() - HALFPRINT; i < table.get_row_count(); i++) {
-            for (std::int64_t j = 0; j < table.get_column_count(); j++) {
+        for (uint64_t i = table.get_row_count() - HALFPRINT; i < table.get_row_count(); i++) {
+            for (uint64_t j = 0; j < table.get_column_count(); j++) {
                 std::cout << std::setw(10) << std::setiosflags(std::ios::fixed)
                     << std::setprecision(3) << x[i * table.get_column_count() + j];
             }
@@ -58,8 +62,8 @@ static auto exceptionHandler = [](sycl::exception_list e_list)->void {
 
 OneDALManager::OneDALManager() {
     m.queues.reserve(2);
-    AddDevice(&sycl::gpu_selector_v, exceptionHandler);
     AddDevice(&sycl::cpu_selector_v, exceptionHandler);
+    AddDevice(&sycl::gpu_selector_v, exceptionHandler);
 }
 
 OneDALManager::~OneDALManager() {
@@ -82,8 +86,11 @@ start:
     if (!data.has_value()) { // User aborted
         return;
     }
-
     PrintBasicTableDescriptor(data.value());
+
+    if (ListAndSelectTasks(data) == false) {
+        return;
+    }
 
     // Restart to device selection if user doesnt wish to exist
     char exitInput;
@@ -92,12 +99,51 @@ start:
         if (std::cin.eof()) {
             std::cout << "User aborted!" << std::endl;
             return;
-        } else if ((exitInput = tolower(exitInput)) == 'n') {
+        }
+        else if ((exitInput = tolower(exitInput)) == 'n') {
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             goto start;
-        } else if (exitInput == 'y') {
+        }
+        else if (exitInput == 'y') {
             return;
         }
+    }
+
+}
+
+bool OneDALManager::ListAndSelectTasks(const std::optional<const oneapi::dal::v1::table>& data) {
+    const uint64_t tasksSize = sizeof(m.tasks) / sizeof(m.tasks[0]);
+    uint64_t selectedTask;
+    std::cout << "Select among available tasks:" << std::endl;
+    for (selectedTask = 0; selectedTask < tasksSize; selectedTask++) {
+        std::cout << '\t' << selectedTask << ") " << m.tasks[selectedTask] << std::endl;
+    }
+
+    if (!(std::cin >> selectedTask)) {
+        if (std::cin.eof()) {
+            std::cout << "User aborted!" << std::endl;
+            return false;
+        }
+        std::cout << "Please enter a number!" << std::endl;
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        return ListAndSelectTasks(data);
+    }
+    else if (selectedTask >= tasksSize) {
+        // User inputed a number out of range
+        std::cout << "Task \"" << selectedTask << "\" not found. Please enter a number between 0 and " << tasksSize - 1 << ":" << std::endl;
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        return ListAndSelectTasks(data);
+    }
+
+    switch (selectedTask) {
+    case 1:
+        TestFunction(data);
+    default:
+        return true;
     }
 }
 
@@ -169,6 +215,65 @@ void OneDALManager::PrintBasicTableDescriptor(const onedal::table& table) {
     std::cout << "Variance:\n" << result.get_variance() << std::endl;
     std::cout << "Standard deviation:\n" << result.get_standard_deviation() << std::endl;
     std::cout << "Variation:\n" << result.get_variation() << std::endl;
+}
+
+// ------ EXPERIMENTAL: Dont understand what I'm doing ------
+void OneDALManager::TestFunction(const std::optional<const oneapi::dal::v1::table>& data) {
+    // Create allocator for device
+    sycl::usm_allocator<uint64_t, sycl::usm::alloc::shared> myAlloc(m.queues[m.selectedDevice]);
+
+    // Create std vectors with the allocator and onedal array to play with data
+    std::vector<uint64_t, sycl::usm_allocator<uint64_t, sycl::usm::alloc::shared>> incomeSplit(data.value().get_row_count(), myAlloc);
+    onedal::array<float> mutArray = onedal::row_accessor<const float>(data.value()).pull();
+
+    std::cout << mutArray.has_mutable_data() << std::endl;
+
+    mutArray.need_mutable_data();
+
+    std::cout << mutArray.has_mutable_data() << std::endl;
+
+    // Haha data go brrr
+    m.queues[m.selectedDevice].submit([&](sycl::handler& h) {
+        uint64_t* incomeSplitPtr = incomeSplit.data();
+    const float* rawIncomePtr = mutArray.get_mutable_data();
+    h.parallel_for(sycl::range<1>(data.value().get_row_count()), [=](sycl::id<1> idx) {
+        incomeSplitPtr[idx] = rawIncomePtr[idx * NBROFCAT + INCOMECAT] / CATBINSSTEP;
+        });
+        }).wait();
+
+        // Count and print income category split
+        uint64_t cat[5] = { 0 };
+        for (uint64_t i = 0; i < data.value().get_row_count(); i++) {
+            switch (incomeSplit[i]) {
+            case 0:
+                cat[incomeSplit[i]]++;
+                break;
+            case 1:
+                cat[incomeSplit[i]]++;
+                break;
+            case 2:
+                cat[incomeSplit[i]]++;
+                break;
+            case 3:
+                cat[incomeSplit[i]]++;
+                break;
+            default:
+                cat[4]++;
+                break;
+            }
+        }
+        std::cout << "Housing income split:" << std::endl;
+        std::cout << '\t' << "cat0" << '\t' << "cat1" << '\t' << "cat2" << '\t' << "cat3" << '\t' << "cat4" << std::endl;
+        for (uint64_t i = 0; i < 5; i++) {
+            std::cout << '\t' << cat[i];
+        }
+        std::cout << std::endl;
+        std::cout << std::fixed << std::setprecision(2);
+        for (uint64_t i = 0; i < 5; i++) {
+            std::cout << '\t' << (float)cat[i] / data.value().get_row_count() * 100.0 << "%";
+        }
+        std::cout << std::endl;
+        // ------ EXP END ------
 }
 
 // Fake Code still working on this
