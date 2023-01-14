@@ -28,6 +28,10 @@ private:
     // Prints basic informations about a given dal::table
     void PrintBasicTableDescriptor(const oneapi::dal::table& table);
 
+    bool ListAndSelectTasks(const std::optional<const oneapi::dal::v1::table>& data);
+
+    void TestFunction(const std::optional<const oneapi::dal::v1::table>& data);
+
     inline void AddDevice(int (*selector)(const sycl::device&), const std::function<void(sycl::exception_list)>& AsyncHandler) {
         try {
             m.queues.push_back(sycl::queue{ sycl::ext::oneapi::detail::select_device(selector), AsyncHandler });
@@ -62,6 +66,8 @@ private:
     struct Members {
         std::vector<sycl::queue> queues = {};
         uint64_t selectedDevice = 0;
+
+        const std::string tasks[2] = {"NONE", "EXP"};
     }m;
 };
 
