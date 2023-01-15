@@ -20,14 +20,11 @@ public:
     void Run();
 
 private:
-    bool ListAndSelectDevices();
-
-    // Get dal::table from .csv file
     const std::optional<const oneapi::dal::table> GetTableFromFile(const std::string& name, const std::string& path = "data/");
-
-    // Prints basic informations about a given dal::table
     void PrintBasicTableDescriptor(const oneapi::dal::table& table);
 
+    bool SelectAmongNumOptions(uint64_t& selector, const uint64_t& selectionSize, const std::string& name = "Option");
+    bool ListAndSelectDevices();
     bool ListAndSelectTasks(const std::optional<const oneapi::dal::v1::table>& data);
 
     void TestFunction(const std::optional<const oneapi::dal::v1::table>& data);

@@ -88,7 +88,7 @@ start:
     }
     PrintBasicTableDescriptor(data.value());
 
-    if (ListAndSelectTasks(data) == false) {
+    if (!ListAndSelectTasks(data)) {// User aborted
         return;
     }
 
@@ -111,80 +111,14 @@ start:
 
 }
 
-bool OneDALManager::ListAndSelectTasks(const std::optional<const oneapi::dal::v1::table>& data) {
-    const uint64_t tasksSize = sizeof(m.tasks) / sizeof(m.tasks[0]);
-    uint64_t selectedTask;
-    std::cout << "Select among available tasks:" << std::endl;
-    for (selectedTask = 0; selectedTask < tasksSize; selectedTask++) {
-        std::cout << '\t' << selectedTask << ") " << m.tasks[selectedTask] << std::endl;
-    }
-
-    if (!(std::cin >> selectedTask)) {
-        if (std::cin.eof()) {
-            std::cout << "User aborted!" << std::endl;
-            return false;
-        }
-        std::cout << "Please enter a number!" << std::endl;
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-        return ListAndSelectTasks(data);
-    }
-    else if (selectedTask >= tasksSize) {
-        // User inputed a number out of range
-        std::cout << "Task \"" << selectedTask << "\" not found. Please enter a number between 0 and " << tasksSize - 1 << ":" << std::endl;
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-        return ListAndSelectTasks(data);
-    }
-
-    switch (selectedTask) {
-    case 1:
-        TestFunction(data);
-    default:
-        return true;
-    }
-}
-
-bool OneDALManager::ListAndSelectDevices() {
-    // List selectable devices
-    std::cout << "Enter prefered device index:" << std::endl;
-    for (uint64_t i = 0; i < m.queues.size(); i++) {
-        std::cout << '\t' << i << ") " << m.queues[i].get_device().get_info<sycl::info::device::name>() << std::endl;
-    }
-
-    // Select device
-    if (!(std::cin >> m.selectedDevice)) {
-        if (std::cin.eof()) {
-            std::cout << "User aborted!" << std::endl;
-            return false;
-        }
-        std::cout << "Please enter a number!" << std::endl;
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-        return ListAndSelectDevices();
-    } else if (m.selectedDevice >= m.queues.size()) {
-        // User inputed a number out of range
-        std::cout << "Device \"" << m.selectedDevice << "\" not found. Please enter a number between 0 and " << m.queues.size() - 1 << ":" << std::endl;
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-        return ListAndSelectDevices();
-    }
-    // Device selected successfully, proceeding
-    std::cout << "Running on device:" << std::endl;
-    std::cout << '\t' << m.queues[m.selectedDevice].get_device().get_info<sycl::info::device::name>() << std::endl;
-    return true;
-}
-
 const std::optional<const onedal::table> OneDALManager::GetTableFromFile(const std::string& name, const std::string& path) {
     std::string tryPath = path + name;
     if (CheckFile(tryPath + ".csv")) {
         tryPath += ".csv";
-    } else if (CheckFile(tryPath)) {
-    } else {
+    }
+    else if (CheckFile(tryPath)) {
+    }
+    else {
         std::cout << "File \"" << name << "\" not found. Please try again:" << std::endl;
         const std::string& userInput = GetUserStringInput();
         if (userInput.empty()) { // User aborted
@@ -215,6 +149,67 @@ void OneDALManager::PrintBasicTableDescriptor(const onedal::table& table) {
     std::cout << "Variance:\n" << result.get_variance() << std::endl;
     std::cout << "Standard deviation:\n" << result.get_standard_deviation() << std::endl;
     std::cout << "Variation:\n" << result.get_variation() << std::endl;
+}
+
+bool OneDALManager::SelectAmongNumOptions(uint64_t& selector, const uint64_t& selectionSize, const std::string& name)
+{
+    if (!(std::cin >> selector)) {
+        if (std::cin.eof()) {
+            std::cout << "User aborted!" << std::endl;
+            return false;
+        }
+        std::cout << "Please enter a number!" << std::endl;
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        return SelectAmongNumOptions(selector, selectionSize);
+    }
+    else if (selector >= selectionSize) {
+        // User inputed a number out of range
+        std::cout << name << "\"" << selector << "\" not found. Please enter a number between 0 and " << selectionSize - 1 << ":" << std::endl;
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        return SelectAmongNumOptions(selector, selectionSize);
+    }
+    return true;
+}
+
+bool OneDALManager::ListAndSelectDevices() {
+    // List selectable devices
+    std::cout << "Enter prefered device index:" << std::endl;
+    for (uint64_t i = 0; i < m.queues.size(); i++) {
+        std::cout << '\t' << i << ") " << m.queues[i].get_device().get_info<sycl::info::device::name>() << std::endl;
+    }
+
+    if (!SelectAmongNumOptions(m.selectedDevice, m.queues.size(), "Device")) { // User aborted
+        return false;
+    }
+
+    // Device selected successfully, proceeding
+    std::cout << "Running on device:" << std::endl;
+    std::cout << '\t' << m.queues[m.selectedDevice].get_device().get_info<sycl::info::device::name>() << std::endl;
+    return true;
+}
+
+bool OneDALManager::ListAndSelectTasks(const std::optional<const oneapi::dal::v1::table>& data) {
+    const uint64_t tasksSize = sizeof(m.tasks) / sizeof(m.tasks[0]);
+    uint64_t selectedTask;
+    std::cout << "Select among available tasks:" << std::endl;
+    for (selectedTask = 0; selectedTask < tasksSize; selectedTask++) {
+        std::cout << '\t' << selectedTask << ") " << m.tasks[selectedTask] << std::endl;
+    }
+
+    if (!SelectAmongNumOptions(selectedTask, tasksSize, "Task")) { // User aborted
+        return false;
+    }
+
+    switch (selectedTask) {
+    case 1:
+        TestFunction(data);
+    default:
+        return true;
+    }
 }
 
 // ------ EXPERIMENTAL: Dont understand what I'm doing ------
