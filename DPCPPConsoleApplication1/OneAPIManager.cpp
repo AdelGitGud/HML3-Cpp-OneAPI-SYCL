@@ -1,4 +1,4 @@
-#include "OneDALManager.h"
+#include "OneAPIManager.h"
 
 #include <vector>
 #include <string>
@@ -60,16 +60,16 @@ static auto exceptionHandler = [](sycl::exception_list e_list)->void {
     }
 };
 
-OneDALManager::OneDALManager() {
+OneAPIManager::OneAPIManager() {
     m.queues.reserve(2);
     AddDevice(&sycl::cpu_selector_v, exceptionHandler);
     AddDevice(&sycl::gpu_selector_v, exceptionHandler);
 }
 
-OneDALManager::~OneDALManager() {
+OneAPIManager::~OneAPIManager() {
 }
 
-void OneDALManager::Run() {
+void OneAPIManager::Run() {
     if (m.queues.empty()) {
         std::cout << "No compatible device found, exiting." << std::endl;
         return;
@@ -111,7 +111,7 @@ start:
 
 }
 
-const std::optional<const onedal::table> OneDALManager::GetTableFromFile(const std::string& name, const std::string& path) {
+const std::optional<const onedal::table> OneAPIManager::GetTableFromFile(const std::string& name, const std::string& path) {
     std::string tryPath = path + name;
     if (CheckFile(tryPath + ".csv")) {
         tryPath += ".csv";
@@ -132,7 +132,7 @@ const std::optional<const onedal::table> OneDALManager::GetTableFromFile(const s
     return onedal::read<const onedal::table>(m.queues[m.selectedDevice], dataSource); // Throws exception in debug when running on the gpu. Doesnt seem to cause issue in current testing cases however.
 }
 
-void OneDALManager::PrintBasicTableDescriptor(const onedal::table& table) {
+void OneAPIManager::PrintBasicTableDescriptor(const onedal::table& table) {
     const onedal::basic_statistics::compute_result result = onedal::compute(m.queues[m.selectedDevice], onedal::basic_statistics::descriptor{}, table);
 
     std::cout << "Column count: " << table.get_column_count() << std::endl;
@@ -151,7 +151,7 @@ void OneDALManager::PrintBasicTableDescriptor(const onedal::table& table) {
     std::cout << "Variation:\n" << result.get_variation() << std::endl;
 }
 
-bool OneDALManager::SelectAmongNumOptions(uint64_t& selector, const uint64_t& selectionSize, const std::string& name)
+bool OneAPIManager::SelectAmongNumOptions(uint64_t& selector, const uint64_t& selectionSize, const std::string& name)
 {
     if (!(std::cin >> selector)) {
         if (std::cin.eof()) {
@@ -175,7 +175,7 @@ bool OneDALManager::SelectAmongNumOptions(uint64_t& selector, const uint64_t& se
     return true;
 }
 
-bool OneDALManager::ListAndSelectDevices() {
+bool OneAPIManager::ListAndSelectDevices() {
     // List selectable devices
     std::cout << "Enter prefered device index:" << std::endl;
     for (uint64_t i = 0; i < m.queues.size(); i++) {
@@ -192,7 +192,7 @@ bool OneDALManager::ListAndSelectDevices() {
     return true;
 }
 
-bool OneDALManager::ListAndSelectTasks(const std::optional<const oneapi::dal::v1::table>& data) {
+bool OneAPIManager::ListAndSelectTasks(const std::optional<const oneapi::dal::v1::table>& data) {
     const uint64_t tasksSize = sizeof(m.tasks) / sizeof(m.tasks[0]);
     uint64_t selectedTask;
     std::cout << "Select among available tasks:" << std::endl;
@@ -213,7 +213,7 @@ bool OneDALManager::ListAndSelectTasks(const std::optional<const oneapi::dal::v1
 }
 
 // ------ EXPERIMENTAL: Dont understand what I'm doing ------
-void OneDALManager::TestFunction(const std::optional<const oneapi::dal::v1::table>& data) {
+void OneAPIManager::TestFunction(const std::optional<const oneapi::dal::v1::table>& data) {
     // Create allocator for device
     sycl::usm_allocator<uint64_t, sycl::usm::alloc::shared> myAlloc(m.queues[m.selectedDevice]);
 
@@ -268,7 +268,6 @@ void OneDALManager::TestFunction(const std::optional<const oneapi::dal::v1::tabl
             std::cout << '\t' << (float)cat[i] / data.value().get_row_count() * 100.0 << "%";
         }
         std::cout << std::endl;
-        // ------ EXP END ------
 }
 
 // Fake Code still working on this

@@ -1,7 +1,7 @@
-#include "OneDALManager.h"
+#include "OneAPIManager.h"
 
 int main(int argc, char* argv[]) {
-    OneDALManager test;
+    OneAPIManager test;
 
     test.Run();
 

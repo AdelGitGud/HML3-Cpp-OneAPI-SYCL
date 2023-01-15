@@ -11,11 +11,11 @@
 
 #include "HOMLData.h"
 
-class OneDALManager
+class OneAPIManager
 {
 public:
-    OneDALManager();
-    ~OneDALManager();
+    OneAPIManager();
+    ~OneAPIManager();
 
     void Run();
 
