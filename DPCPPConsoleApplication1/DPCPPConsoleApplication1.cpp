@@ -3,7 +3,9 @@
 int main(int argc, char* argv[]) {
     OneAPIManager test;
 
-    test.Run();
+    if (test.Init()) {
+        test.Run();
+    }
 
     return 0;
 }

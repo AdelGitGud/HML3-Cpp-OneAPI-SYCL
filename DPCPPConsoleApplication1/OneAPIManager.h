@@ -15,6 +15,7 @@ public:
     OneAPIManager();
     ~OneAPIManager();
 
+    bool Init();
     void Run();
 
 private:

@@ -72,13 +72,15 @@ OneAPIManager::OneAPIManager() {
 OneAPIManager::~OneAPIManager() {
 }
 
-void OneAPIManager::Run() {
+bool OneAPIManager::Init() {
     if (m.queues.empty()) {
         std::cout << "No compatible device found, exiting." << std::endl;
-        return;
+        return false;
     }
+    return true;
+}
 
-start:
+void OneAPIManager::Run() {
     if (!ListAndSelectDevices()) { // User aborted
         return;
     }
@@ -97,13 +99,12 @@ start:
         }
         else if ((exitInput = tolower(exitInput)) == 'n') {
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            goto start;
+            Run();
         }
         else if (exitInput == 'y') {
             return;
         }
     }
-
 }
 
 const std::optional<const onedal::table> OneAPIManager::GetTableFromFile(const std::string& name, const std::string& path) {
