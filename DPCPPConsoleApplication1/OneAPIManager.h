@@ -29,6 +29,7 @@ private:
     bool HOMLTesting();
     bool SYCLTesting();
     bool SYCLHelloWorld();
+    bool SYCLCount();
 
     inline void AddDevice(int (*selector)(const sycl::device&), const std::function<void(sycl::exception_list)>& AsyncHandler) {
         try {
@@ -65,7 +66,12 @@ private:
         std::vector<sycl::queue> queues = {};
         uint64_t primaryDevice = 0;
 
-        const std::string tasks[4] = {"NONE", "HOML Testing", "SYCL Testing", "SYCL Hello World"};
+        const std::string tasks[5] = {"NONE",
+            "HOML Testing (EXP)",
+            "SYCL Testing (EXP)",
+            "SYCL Hello World",
+            "SYCL Learn to count"
+        };
     }m;
 };
 

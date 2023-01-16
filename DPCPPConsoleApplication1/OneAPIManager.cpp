@@ -19,6 +19,14 @@ namespace onedal = oneapi::dal;
 #define CATCUTOFF   6.0f
 #define CATBINSSTEP 1.5f
 
+enum TASKS {
+    NONE,
+    HOMLEXP,
+    SYCLEXP,
+    SYCLHW,
+    SYCLCOUNT
+};
+
 // std::out overload
 std::ostream& operator<<(std::ostream& stream, const onedal::table& table) {
     onedal::array arr = onedal::row_accessor<const float>(table).pull();
@@ -85,7 +93,7 @@ void OneAPIManager::Run() {
         return;
     }
 
-    if (!ListAndRunTasks()) {// User aborted
+    if (!ListAndRunTasks()) {// User aborted or error in selecting task
         return;
     }
 
@@ -100,6 +108,7 @@ void OneAPIManager::Run() {
         else if ((exitInput = tolower(exitInput)) == 'n') {
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             Run();
+            return;
         }
         else if (exitInput == 'y') {
             return;
@@ -201,19 +210,26 @@ bool OneAPIManager::ListAndRunTasks() {
     }
 
     switch (selectedTask) {
+    case 0:
+        std::cout << "No task selected." << std::endl;
+        return true; // No task selected
     case 1:
         return HOMLTesting();
     case 2:
         return SYCLTesting();
     case 3:
         return SYCLHelloWorld();
+    case 4:
+        return SYCLCount();
     default:
-        return true; // NONE option successfully selected
+        std::cout << "Error task \"" << m.tasks[selectedTask] << "\" is listed but not implemented!!!" << std::endl;
+        return false; 
     }
 }
 
 // ------ EXPERIMENTAL: Dont understand what I'm doing ------
 bool OneAPIManager::HOMLTesting() {
+    std::cout << "Running task: " << m.tasks[HOMLEXP] << '.' << std::endl;
     // Prints and loads selected data
     PrintDirectoryEntries("data");
     const std::optional<const onedal::table>& data = GetTableFromFile(GetUserStringInput());
@@ -280,10 +296,12 @@ bool OneAPIManager::HOMLTesting() {
 }
 
 bool OneAPIManager::SYCLTesting() {
+    std::cout << "Running task: " << m.tasks[SYCLEXP] << '.' << std::endl;
     return true;
 }
 
 bool OneAPIManager::SYCLHelloWorld() {
+    std::cout << "Running task: " << m.tasks[SYCLHW] << '.' << std::endl;
     const DPHelloWorld data;
     char* result = sycl::malloc_shared<char>(data.sz, m.queues[m.primaryDevice]);
     std::memcpy(result, data.secret.data(), data.sz);
@@ -294,6 +312,30 @@ bool OneAPIManager::SYCLHelloWorld() {
 
     std::cout << result << std::endl;
     free(result, m.queues[m.primaryDevice]);
+    return true;
+}
+
+bool OneAPIManager::SYCLCount() {
+    std::cout << "Running task: " << m.tasks[SYCLCOUNT] << '.' << std::endl;
+    constexpr int size = 16;
+    std::array<int, size> data;
+
+    // Create buffer using host allocated "data" array
+    sycl::buffer B{ data };
+
+    m.queues[m.primaryDevice].submit([&](sycl::handler& h) {
+    sycl::accessor A{ B, h };
+    h.parallel_for(size, [=](auto& idx) {
+            A[idx] = idx;
+        });
+    });
+
+    // Obtain access to buffer on the host
+    // Will wait for device kernel to execute to generate data
+    sycl::host_accessor A{ B };
+    for (int i = 0; i < size; i++) {
+        std::cout << "data[" << i << "] = " << A[i] << "\n";
+    }
     return true;
 }
 
