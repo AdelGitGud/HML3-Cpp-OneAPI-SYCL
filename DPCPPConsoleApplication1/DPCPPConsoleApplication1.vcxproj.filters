@@ -18,12 +18,12 @@
     <ClCompile Include="DPCPPConsoleApplication1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OneDALManager.cpp">
+    <ClCompile Include="OneAPIManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="OneDALManager.h">
+    <ClInclude Include="OneAPIManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="HOMLData.h">

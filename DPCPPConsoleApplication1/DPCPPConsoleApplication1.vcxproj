@@ -92,11 +92,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DPCPPConsoleApplication1.cpp" />
-    <ClCompile Include="OneDALManager.cpp" />
+    <ClCompile Include="OneAPIManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HOMLData.h" />
-    <ClInclude Include="OneDALManager.h" />
+    <ClInclude Include="OneAPIManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
