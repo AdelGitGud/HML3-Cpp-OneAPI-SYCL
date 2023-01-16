@@ -7,6 +7,9 @@
 #include <fstream>
 #include <cassert>
 
+#include "HOMLData.h"
+#include "DPData.h"
+
 namespace onedal = oneapi::dal;
 
 #define MAXPRINT    10
@@ -80,15 +83,7 @@ start:
         return;
     }
 
-    // Prints and loads selected data
-    PrintDirectoryEntries("data");
-    const std::optional<const onedal::table>& data = GetTableFromFile(GetUserStringInput());
-    if (!data.has_value()) { // User aborted
-        return;
-    }
-    PrintBasicTableDescriptor(data.value());
-
-    if (!ListAndSelectTasks(data)) {// User aborted
+    if (!ListAndRunTasks()) {// User aborted
         return;
     }
 
@@ -129,11 +124,11 @@ const std::optional<const onedal::table> OneAPIManager::GetTableFromFile(const s
     onedal::csv::data_source dataSource{ tryPath };
     dataSource.set_delimiter(',');
     dataSource.set_parse_header(true);
-    return onedal::read<const onedal::table>(m.queues[m.selectedDevice], dataSource); // Throws exception in debug when running on the gpu. Doesnt seem to cause issue in current testing cases however.
+    return onedal::read<const onedal::table>(m.queues[m.primaryDevice], dataSource); // Throws exception in debug when running on the gpu. Doesnt seem to cause issue in current testing cases however.
 }
 
 void OneAPIManager::PrintBasicTableDescriptor(const onedal::table& table) {
-    const onedal::basic_statistics::compute_result result = onedal::compute(m.queues[m.selectedDevice], onedal::basic_statistics::descriptor{}, table);
+    const onedal::basic_statistics::compute_result result = onedal::compute(m.queues[m.primaryDevice], onedal::basic_statistics::descriptor{}, table);
 
     std::cout << "Column count: " << table.get_column_count() << std::endl;
     std::cout << "Row count : " << table.get_row_count() << std::endl;
@@ -182,17 +177,17 @@ bool OneAPIManager::ListAndSelectDevices() {
         std::cout << '\t' << i << ") " << m.queues[i].get_device().get_info<sycl::info::device::name>() << std::endl;
     }
 
-    if (!SelectAmongNumOptions(m.selectedDevice, m.queues.size(), "Device")) { // User aborted
+    if (!SelectAmongNumOptions(m.primaryDevice, m.queues.size(), "Device")) { // User aborted
         return false;
     }
 
     // Device selected successfully, proceeding
     std::cout << "Running on device:" << std::endl;
-    std::cout << '\t' << m.queues[m.selectedDevice].get_device().get_info<sycl::info::device::name>() << std::endl;
+    std::cout << '\t' << m.queues[m.primaryDevice].get_device().get_info<sycl::info::device::name>() << std::endl;
     return true;
 }
 
-bool OneAPIManager::ListAndSelectTasks(const std::optional<const oneapi::dal::v1::table>& data) {
+bool OneAPIManager::ListAndRunTasks() {
     const uint64_t tasksSize = sizeof(m.tasks) / sizeof(m.tasks[0]);
     uint64_t selectedTask;
     std::cout << "Select among available tasks:" << std::endl;
@@ -206,16 +201,28 @@ bool OneAPIManager::ListAndSelectTasks(const std::optional<const oneapi::dal::v1
 
     switch (selectedTask) {
     case 1:
-        TestFunction(data);
+        return HOMLTesting();
+    case 2:
+        return SYCLTesting();
+    case 3:
+        return SYCLHelloWorld();
     default:
-        return true;
+        return true; // NONE option successfully selected
     }
 }
 
 // ------ EXPERIMENTAL: Dont understand what I'm doing ------
-void OneAPIManager::TestFunction(const std::optional<const oneapi::dal::v1::table>& data) {
+bool OneAPIManager::HOMLTesting() {
+    // Prints and loads selected data
+    PrintDirectoryEntries("data");
+    const std::optional<const onedal::table>& data = GetTableFromFile(GetUserStringInput());
+    if (!data.has_value()) { // User aborted
+        return false;
+    }
+    PrintBasicTableDescriptor(data.value());
+
     // Create allocator for device
-    sycl::usm_allocator<uint64_t, sycl::usm::alloc::shared> myAlloc(m.queues[m.selectedDevice]);
+    sycl::usm_allocator<uint64_t, sycl::usm::alloc::shared> myAlloc(m.queues[m.primaryDevice]);
 
     // Create std vectors with the allocator and onedal array to play with data
     std::vector<uint64_t, sycl::usm_allocator<uint64_t, sycl::usm::alloc::shared>> incomeSplit(data.value().get_row_count(), myAlloc);
@@ -228,46 +235,65 @@ void OneAPIManager::TestFunction(const std::optional<const oneapi::dal::v1::tabl
     std::cout << mutArray.has_mutable_data() << std::endl;
 
     // Haha data go brrr
-    m.queues[m.selectedDevice].submit([&](sycl::handler& h) {
+    m.queues[m.primaryDevice].submit([&](sycl::handler& h) {
         uint64_t* incomeSplitPtr = incomeSplit.data();
     const float* rawIncomePtr = mutArray.get_mutable_data();
     h.parallel_for(sycl::range<1>(data.value().get_row_count()), [=](sycl::id<1> idx) {
         incomeSplitPtr[idx] = rawIncomePtr[idx * NBROFCAT + INCOMECAT] / CATBINSSTEP;
         });
-        }).wait();
+    }).wait();
 
-        // Count and print income category split
-        uint64_t cat[5] = { 0 };
-        for (uint64_t i = 0; i < data.value().get_row_count(); i++) {
-            switch (incomeSplit[i]) {
-            case 0:
-                cat[incomeSplit[i]]++;
-                break;
-            case 1:
-                cat[incomeSplit[i]]++;
-                break;
-            case 2:
-                cat[incomeSplit[i]]++;
-                break;
-            case 3:
-                cat[incomeSplit[i]]++;
-                break;
-            default:
-                cat[4]++;
-                break;
-            }
+    // Count and print income category split
+    uint64_t cat[5] = { 0 };
+    for (uint64_t i = 0; i < data.value().get_row_count(); i++) {
+        switch (incomeSplit[i]) {
+        case 0:
+            cat[incomeSplit[i]]++;
+            break;
+        case 1:
+            cat[incomeSplit[i]]++;
+            break;
+        case 2:
+            cat[incomeSplit[i]]++;
+            break;
+        case 3:
+            cat[incomeSplit[i]]++;
+            break;
+        default:
+            cat[4]++;
+            break;
         }
-        std::cout << "Housing income split:" << std::endl;
-        std::cout << '\t' << "cat0" << '\t' << "cat1" << '\t' << "cat2" << '\t' << "cat3" << '\t' << "cat4" << std::endl;
-        for (uint64_t i = 0; i < 5; i++) {
-            std::cout << '\t' << cat[i];
-        }
-        std::cout << std::endl;
-        std::cout << std::fixed << std::setprecision(2);
-        for (uint64_t i = 0; i < 5; i++) {
-            std::cout << '\t' << (float)cat[i] / data.value().get_row_count() * 100.0 << "%";
-        }
-        std::cout << std::endl;
+    }
+    std::cout << "Housing income split:" << std::endl;
+    std::cout << '\t' << "cat0" << '\t' << "cat1" << '\t' << "cat2" << '\t' << "cat3" << '\t' << "cat4" << std::endl;
+    for (uint64_t i = 0; i < 5; i++) {
+        std::cout << '\t' << cat[i];
+    }
+    std::cout << std::endl;
+    std::cout << std::fixed << std::setprecision(2);
+    for (uint64_t i = 0; i < 5; i++) {
+        std::cout << '\t' << (float)cat[i] / data.value().get_row_count() * 100.0 << "%";
+    }
+    std::cout << std::endl;
+    return true;
+}
+
+bool OneAPIManager::SYCLTesting() {
+    return true;
+}
+
+bool OneAPIManager::SYCLHelloWorld() {
+    const DPHelloWorld data;
+    char* result = sycl::malloc_shared<char>(data.sz, m.queues[m.primaryDevice]);
+    std::memcpy(result, data.secret.data(), data.sz);
+
+    m.queues[m.primaryDevice].parallel_for(data.sz, [=](auto& i) {
+        result[i] -= 1;
+    }).wait();
+
+    std::cout << result << std::endl;
+    free(result, m.queues[m.primaryDevice]);
+    return true;
 }
 
 // Fake Code still working on this

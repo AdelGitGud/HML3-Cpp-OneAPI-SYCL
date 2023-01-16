@@ -9,8 +9,6 @@
 
 #include <filesystem>
 
-#include "HOMLData.h"
-
 class OneAPIManager
 {
 public:
@@ -25,9 +23,11 @@ private:
 
     bool SelectAmongNumOptions(uint64_t& selector, const uint64_t& selectionSize, const std::string& name = "Option");
     bool ListAndSelectDevices();
-    bool ListAndSelectTasks(const std::optional<const oneapi::dal::v1::table>& data);
+    bool ListAndRunTasks();
 
-    void TestFunction(const std::optional<const oneapi::dal::v1::table>& data);
+    bool HOMLTesting();
+    bool SYCLTesting();
+    bool SYCLHelloWorld();
 
     inline void AddDevice(int (*selector)(const sycl::device&), const std::function<void(sycl::exception_list)>& AsyncHandler) {
         try {
@@ -62,9 +62,9 @@ private:
 private:
     struct Members {
         std::vector<sycl::queue> queues = {};
-        uint64_t selectedDevice = 0;
+        uint64_t primaryDevice = 0;
 
-        const std::string tasks[2] = {"NONE", "EXP"};
+        const std::string tasks[4] = {"NONE", "HOML Testing", "SYCL Testing", "SYCL Hello World"};
     }m;
 };
 

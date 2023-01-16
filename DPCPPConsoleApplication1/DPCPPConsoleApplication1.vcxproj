@@ -95,6 +95,7 @@
     <ClCompile Include="OneAPIManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DPData.h" />
     <ClInclude Include="HOMLData.h" />
     <ClInclude Include="OneAPIManager.h" />
   </ItemGroup>

@@ -29,5 +29,8 @@
     <ClInclude Include="HOMLData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DPData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
