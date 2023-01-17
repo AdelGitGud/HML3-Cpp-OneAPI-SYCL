@@ -114,6 +114,7 @@ void OneAPIManager::Run() {
 
 const std::optional<const onedal::table> OneAPIManager::GetTableFromFile(const std::string& name, const std::string& path) {
     std::string tryPath = path + name;
+
     if (CheckFile(tryPath + ".csv")) {
         tryPath += ".csv";
     }
@@ -152,8 +153,7 @@ void OneAPIManager::PrintBasicTableDescriptor(const onedal::table& table) {
     std::cout << "Variation:\n" << result.get_variation() << std::endl;
 }
 
-bool OneAPIManager::SelectAmongNumOptions(uint64_t& selector, const uint64_t& selectionSize, const std::string& name)
-{
+bool OneAPIManager::SelectAmongNumOptions(uint64_t& selector, const uint64_t& selectionSize, const std::string& name) {
     if (!(std::cin >> selector)) {
         if (std::cin.eof()) {
             std::cout << "User aborted!" << std::endl;
@@ -177,8 +177,8 @@ bool OneAPIManager::SelectAmongNumOptions(uint64_t& selector, const uint64_t& se
 }
 
 bool OneAPIManager::ListAndSelectDevices() {
-    // List selectable devices
     std::cout << "Enter prefered device index:" << std::endl;
+
     for (uint64_t i = 0; i < m.queues.size(); i++) {
         std::cout << '\t' << i << ") " << m.queues[i].get_device().get_info<sycl::info::device::name>() << std::endl;
     }
@@ -197,6 +197,7 @@ bool OneAPIManager::ListAndRunTasks() {
     constexpr uint64_t  TASKSCOUNT   = sizeof(m.tasks) / sizeof(m.tasks[0]);
 
     uint64_t selectedTask;
+
     std::cout << "Select among available tasks:" << std::endl;
     for (selectedTask = 0; selectedTask < TASKSCOUNT; selectedTask++) {
         std::cout << '\t' << selectedTask << ") " << m.tasks[selectedTask] << std::endl;
@@ -207,16 +208,16 @@ bool OneAPIManager::ListAndRunTasks() {
     }
 
     switch (selectedTask) {
-    case 0:
+    case NONE:
         std::cout << "No task selected." << std::endl;
         return true; // No task selected
-    case 1:
+    case HOMLEXP:
         return HOMLTesting();
-    case 2:
+    case SYCLEXP:
         return SYCLTesting();
-    case 3:
+    case SYCLHW:
         return SYCLHelloWorld();
-    case 4:
+    case SYCLCOUNT:
         return SYCLCount();
     default:
         std::cout << "Error task \"" << m.tasks[selectedTask] << "\" is listed but not implemented!!!" << std::endl;
@@ -228,8 +229,8 @@ bool OneAPIManager::ListAndRunTasks() {
 bool OneAPIManager::HOMLTesting() {
     constexpr uint64_t  NBROFCAT        = 10;
     constexpr uint64_t  INCOMESPLITS    = 5;
-    constexpr float     SPLITSCUTOFF    = 6.f;
     constexpr float     CATBINSSTEP     = 5.f;
+    //constexpr float     SPLITSCUTOFF    = 6.f;
 
     std::cout << "Running task: " << m.tasks[HOMLEXP] << '.' << std::endl;
 
@@ -309,6 +310,7 @@ bool OneAPIManager::SYCLHelloWorld() {
 
     const DPHelloWorld data;
     char* result = sycl::malloc_shared<char>(data.sz, m.queues[m.primaryDevice]);
+
     std::memcpy(result, data.secret.data(), data.sz);
 
     m.queues[m.primaryDevice].parallel_for(data.sz, [=](auto& i) {
