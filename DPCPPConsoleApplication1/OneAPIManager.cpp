@@ -226,10 +226,10 @@ bool OneAPIManager::ListAndRunTasks() {
 
 // ------ EXPERIMENTAL: Dont understand what I'm doing ------
 bool OneAPIManager::HOMLTesting() {
-    constexpr uint64_t  NBROFCAT    = 10;
-    constexpr uint64_t  INCOMECAT   = 5;
-    constexpr float     CATCUTOFF   = 6.f;
-    constexpr float     CATBINSSTEP = 5;
+    constexpr uint64_t  NBROFCAT        = 10;
+    constexpr uint64_t  INCOMESPLITS    = 5;
+    constexpr float     SPLITSCUTOFF    = 6.f;
+    constexpr float     CATBINSSTEP     = 5.f;
 
     std::cout << "Running task: " << m.tasks[HOMLEXP] << '.' << std::endl;
 
@@ -259,12 +259,12 @@ bool OneAPIManager::HOMLTesting() {
         uint64_t* incomeSplitPtr = incomeSplit.data();
     const float* rawIncomePtr = mutArray.get_mutable_data();
     h.parallel_for(sycl::range<1>(data.value().get_row_count()), [=](sycl::id<1> idx) {
-        incomeSplitPtr[idx] = rawIncomePtr[idx * NBROFCAT + INCOMECAT] / CATBINSSTEP;
+        incomeSplitPtr[idx] = rawIncomePtr[idx * NBROFCAT + INCOMESPLITS] / CATBINSSTEP;
         });
     }).wait();
 
     // Count and print income category split
-    uint64_t cat[5] = { 0 };
+    uint64_t cat[INCOMESPLITS] = { 0 };
     for (uint64_t i = 0; i < data.value().get_row_count(); i++) {
         switch (incomeSplit[i]) {
         case 0:
@@ -286,12 +286,12 @@ bool OneAPIManager::HOMLTesting() {
     }
     std::cout << "Housing income split:" << std::endl;
     std::cout << '\t' << "cat0" << '\t' << "cat1" << '\t' << "cat2" << '\t' << "cat3" << '\t' << "cat4" << std::endl;
-    for (uint64_t i = 0; i < 5; i++) {
+    for (uint64_t i = 0; i < INCOMESPLITS; i++) {
         std::cout << '\t' << cat[i];
     }
     std::cout << std::endl;
     std::cout << std::fixed << std::setprecision(2);
-    for (uint64_t i = 0; i < 5; i++) {
+    for (uint64_t i = 0; i < INCOMESPLITS; i++) {
         std::cout << '\t' << (float)cat[i] / data.value().get_row_count() * 100.0 << "%";
     }
     std::cout << std::endl;
@@ -321,7 +321,7 @@ bool OneAPIManager::SYCLHelloWorld() {
 }
 
 bool OneAPIManager::SYCLCount() {
-    constexpr int SIZE = 16;
+    constexpr uint64_t  SIZE    = 16;
 
     std::cout << "Running task: " << m.tasks[SYCLCOUNT] << '.' << std::endl;
 
