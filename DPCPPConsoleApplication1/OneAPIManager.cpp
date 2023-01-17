@@ -194,15 +194,15 @@ bool OneAPIManager::ListAndSelectDevices() {
 }
 
 bool OneAPIManager::ListAndRunTasks() {
-    constexpr uint64_t  TASKSSIZE   = sizeof(m.tasks) / sizeof(m.tasks[0]);
+    constexpr uint64_t  TASKSCOUNT   = sizeof(m.tasks) / sizeof(m.tasks[0]);
 
     uint64_t selectedTask;
     std::cout << "Select among available tasks:" << std::endl;
-    for (selectedTask = 0; selectedTask < TASKSSIZE; selectedTask++) {
+    for (selectedTask = 0; selectedTask < TASKSCOUNT; selectedTask++) {
         std::cout << '\t' << selectedTask << ") " << m.tasks[selectedTask] << std::endl;
     }
 
-    if (!SelectAmongNumOptions(selectedTask, TASKSSIZE, "Task")) { // User aborted
+    if (!SelectAmongNumOptions(selectedTask, TASKSCOUNT, "Task")) { // User aborted
         return false;
     }
 
@@ -257,9 +257,9 @@ bool OneAPIManager::HOMLTesting() {
     // Haha data go brrr
     m.queues[m.primaryDevice].submit([&](sycl::handler& h) {
         uint64_t* incomeSplitPtr = incomeSplit.data();
-    const float* rawIncomePtr = mutArray.get_mutable_data();
-    h.parallel_for(sycl::range<1>(data.value().get_row_count()), [=](sycl::id<1> idx) {
-        incomeSplitPtr[idx] = rawIncomePtr[idx * NBROFCAT + INCOMESPLITS] / CATBINSSTEP;
+        const float* rawIncomePtr = mutArray.get_mutable_data();
+        h.parallel_for(sycl::range<1>(data.value().get_row_count()), [=](sycl::id<1> idx) {
+            incomeSplitPtr[idx] = rawIncomePtr[idx * NBROFCAT + INCOMESPLITS] / CATBINSSTEP;
         });
     }).wait();
 
