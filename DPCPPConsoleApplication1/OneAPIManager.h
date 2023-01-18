@@ -19,7 +19,7 @@ public:
     void Run();
 
 private:
-    const std::optional<const oneapi::dal::table> GetTableFromFile(const std::string& name, const std::string& path = "data/");
+    std::optional<const oneapi::dal::table> GetTableFromFile(const std::string& name, const std::string& path = "data/");
     void PrintBasicTableDescriptor(const oneapi::dal::table& table);
 
     bool SelectAmongNumOptions(uint64_t& selector, const uint64_t& selectionSize, const std::string& name = "Option");
@@ -67,10 +67,12 @@ private:
         uint64_t primaryDevice = 0;
 
         const std::string tasks[5] = {"NONE",
-            "HOML Testing (EXP)",
-            "SYCL Testing (EXP)",
+
             "SYCL Hello World",
-            "SYCL Learn to count"
+            "SYCL Learn to count",
+
+            "HOML Testing (EXP)",
+            "SYCL Testing (EXP)"
         };
     }m;
 };

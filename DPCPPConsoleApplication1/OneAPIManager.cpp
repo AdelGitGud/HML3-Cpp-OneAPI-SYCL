@@ -14,10 +14,12 @@ namespace onedal = oneapi::dal;
 
 enum TASKS {
     NONE,
-    HOMLEXP,
-    SYCLEXP,
+
     SYCLHW,
-    SYCLCOUNT
+    SYCLCOUNT,
+
+    HOMLEXP,
+    SYCLEXP
 };
 
 // std::out overload
@@ -112,7 +114,7 @@ void OneAPIManager::Run() {
     }
 }
 
-const std::optional<const onedal::table> OneAPIManager::GetTableFromFile(const std::string& name, const std::string& path) {
+std::optional<const onedal::table> OneAPIManager::GetTableFromFile(const std::string& name, const std::string& path) {
     std::string tryPath = path + name;
 
     if (CheckFile(tryPath + ".csv")) {
@@ -229,14 +231,15 @@ bool OneAPIManager::ListAndRunTasks() {
 bool OneAPIManager::HOMLTesting() {
     constexpr uint64_t  NBROFCAT        = 10;
     constexpr uint64_t  INCOMESPLITS    = 5;
-    constexpr float     CATBINSSTEP     = 5.f;
+    constexpr uint64_t  INCOMECAT       = 7;
+    constexpr float     CATBINSSTEP     = 1.5f;
     //constexpr float     SPLITSCUTOFF    = 6.f;
 
     std::cout << "Running task: " << m.tasks[HOMLEXP] << '.' << std::endl;
 
     // Prints and loads selected data
     PrintDirectoryEntries("data");
-    const std::optional<const onedal::table>& data = GetTableFromFile(GetUserStringInput());
+    const std::optional<const onedal::table> data = GetTableFromFile(GetUserStringInput());
     if (!data.has_value()) { // User aborted
         return false;
     }
@@ -249,18 +252,14 @@ bool OneAPIManager::HOMLTesting() {
     std::vector<uint64_t, sycl::usm_allocator<uint64_t, sycl::usm::alloc::shared>> incomeSplit(data.value().get_row_count(), myAlloc);
     onedal::array<float> mutArray = onedal::row_accessor<const float>(data.value()).pull();
 
-    std::cout << mutArray.has_mutable_data() << std::endl;
-
     mutArray.need_mutable_data();
-
-    std::cout << mutArray.has_mutable_data() << std::endl;
 
     // Haha data go brrr
     m.queues[m.primaryDevice].submit([&](sycl::handler& h) {
         uint64_t* incomeSplitPtr = incomeSplit.data();
         const float* rawIncomePtr = mutArray.get_mutable_data();
         h.parallel_for(sycl::range<1>(data.value().get_row_count()), [=](sycl::id<1> idx) {
-            incomeSplitPtr[idx] = rawIncomePtr[idx * NBROFCAT + INCOMESPLITS] / CATBINSSTEP;
+            incomeSplitPtr[idx] = rawIncomePtr[idx * NBROFCAT + INCOMECAT] / CATBINSSTEP;
         });
     }).wait();
 
@@ -313,8 +312,10 @@ bool OneAPIManager::SYCLHelloWorld() {
 
     std::memcpy(result, data.secret.data(), data.sz);
 
-    m.queues[m.primaryDevice].parallel_for(data.sz, [=](auto& i) {
-        result[i] -= 1;
+    m.queues[m.primaryDevice].submit([&](sycl::handler& h) {
+        h.parallel_for(data.sz, [=](auto& i) {
+            result[i] -= 1;
+        });
     }).wait();
 
     std::cout << result << std::endl;
