@@ -227,7 +227,7 @@ bool OneAPIManager::ListAndRunTasks() {
     }
 }
 
-// ------ EXPERIMENTAL: Dont understand what I'm doing ------
+// ------ EXPERIMENTAL: Dont understand what I'm doing but this is fun ------
 bool OneAPIManager::HOMLTesting() {
     constexpr uint64_t  NBROFCAT        = 10;
     constexpr uint64_t  INCOMESPLITS    = 5;
@@ -251,8 +251,14 @@ bool OneAPIManager::HOMLTesting() {
     // Create std vectors with the allocator and onedal array to play with data
     std::vector<uint64_t, sycl::usm_allocator<uint64_t, sycl::usm::alloc::shared>> incomeSplit(data.value().get_row_count(), myAlloc);
     onedal::array<float> mutArray = onedal::row_accessor<const float>(data.value()).pull();
+    std::array<uint64_t, INCOMESPLITS> hostCat = { 0 };
+    uint64_t* catPtr = sycl::malloc_device<uint64_t>(INCOMESPLITS, m.queues[m.primaryDevice]);
 
     mutArray.need_mutable_data();
+    
+    m.queues[m.primaryDevice].submit([&](sycl::handler& h) {
+        h.memcpy(catPtr, &hostCat[0], INCOMECAT * sizeof(uint64_t));
+    }).wait();
 
     // Haha data go brrr
     m.queues[m.primaryDevice].submit([&](sycl::handler& h) {
@@ -260,39 +266,24 @@ bool OneAPIManager::HOMLTesting() {
         const float* rawIncomePtr = mutArray.get_mutable_data();
         h.parallel_for(sycl::range<1>(data.value().get_row_count()), [=](sycl::id<1> idx) {
             incomeSplitPtr[idx] = rawIncomePtr[idx * NBROFCAT + INCOMECAT] / CATBINSSTEP;
+            catPtr[incomeSplitPtr[idx]] = incomeSplitPtr[idx];
         });
     }).wait();
 
-    // Count and print income category split
-    uint64_t cat[INCOMESPLITS] = { 0 };
-    for (uint64_t i = 0; i < data.value().get_row_count(); i++) {
-        switch (incomeSplit[i]) {
-        case 0:
-            cat[incomeSplit[i]]++;
-            break;
-        case 1:
-            cat[incomeSplit[i]]++;
-            break;
-        case 2:
-            cat[incomeSplit[i]]++;
-            break;
-        case 3:
-            cat[incomeSplit[i]]++;
-            break;
-        default:
-            cat[4]++;
-            break;
-        }
-    }
+    m.queues[m.primaryDevice].submit([&](sycl::handler& h) {
+        h.memcpy(&hostCat[0], catPtr, INCOMECAT * sizeof(uint64_t));
+    }).wait();
+    free(catPtr, m.queues[m.primaryDevice]);
+
     std::cout << "Housing income split:" << std::endl;
     std::cout << '\t' << "cat0" << '\t' << "cat1" << '\t' << "cat2" << '\t' << "cat3" << '\t' << "cat4" << std::endl;
     for (uint64_t i = 0; i < INCOMESPLITS; i++) {
-        std::cout << '\t' << cat[i];
+        std::cout << '\t' << hostCat[i];
     }
     std::cout << std::endl;
     std::cout << std::fixed << std::setprecision(2);
     for (uint64_t i = 0; i < INCOMESPLITS; i++) {
-        std::cout << '\t' << (float)cat[i] / data.value().get_row_count() * 100.0 << "%";
+        std::cout << '\t' << (float)hostCat[i] / data.value().get_row_count() * 100.0 << "%";
     }
     std::cout << std::endl;
     return true;
