@@ -31,24 +31,24 @@ std::ostream& operator<<(std::ostream& stream, const onedal::table& table) {
     const float* x = arr.get_data();
 
     if (table.get_row_count() <= MAXPRINT) {
-        for (uint64_t i = 0; i < table.get_row_count(); i++) {
-            for (uint64_t j = 0; j < table.get_column_count(); j++) {
+        for (size_t i = 0; i < table.get_row_count(); i++) {
+            for (size_t j = 0; j < table.get_column_count(); j++) {
                 std::cout << std::setw(10) << std::setiosflags(std::ios::fixed)
                     << std::setprecision(3) << x[i * table.get_column_count() + j];
             }
             std::cout << std::endl;
         }
     } else {
-        for (uint64_t i = 0; i < HALFPRINT; i++) {
-            for (uint64_t j = 0; j < table.get_column_count(); j++) {
+        for (size_t i = 0; i < HALFPRINT; i++) {
+            for (size_t j = 0; j < table.get_column_count(); j++) {
                 std::cout << std::setw(10) << std::setiosflags(std::ios::fixed)
                     << std::setprecision(3) << x[i * table.get_column_count() + j];
             }
             std::cout << std::endl;
         }
         std::cout << "..." << (table.get_row_count() - MAXPRINT) << " lines skipped..." << std::endl;
-        for (uint64_t i = table.get_row_count() - HALFPRINT; i < table.get_row_count(); i++) {
-            for (uint64_t j = 0; j < table.get_column_count(); j++) {
+        for (size_t i = table.get_row_count() - HALFPRINT; i < table.get_row_count(); i++) {
+            for (size_t j = 0; j < table.get_column_count(); j++) {
                 std::cout << std::setw(10) << std::setiosflags(std::ios::fixed)
                     << std::setprecision(3) << x[i * table.get_column_count() + j];
             }
@@ -181,7 +181,7 @@ bool OneAPIManager::SelectAmongNumOptions(uint64_t& selector, const uint64_t& se
 bool OneAPIManager::ListAndSelectDevices() {
     std::cout << "Enter prefered device index:" << std::endl;
 
-    for (uint64_t i = 0; i < m.queues.size(); i++) {
+    for (size_t i = 0; i < m.queues.size(); i++) {
         std::cout << '\t' << i << ") " << m.queues[i].get_device().get_info<sycl::info::device::name>() << std::endl;
     }
 
@@ -290,8 +290,41 @@ bool OneAPIManager::HOMLTesting() {
 }
 
 bool OneAPIManager::SYCLTesting() {
+    constexpr size_t N = 69;
+
     std::cout << "Running task: " << m.tasks[SYCLEXP] << '.' << std::endl;
 
+    std::array<uint64_t, N> data;
+
+    for (size_t i = 0; i < N; i++) {
+        data[i] = 0;
+    }
+
+    {
+        sycl::buffer buffer(data);
+
+        m.queues[m.primaryDevice].submit([&](sycl::handler& h) {
+            sycl::accessor access(buffer, h);
+
+            h.parallel_for(N, [=](sycl::id<1> i) {
+                access[i] += i;
+            });
+        });
+
+        sycl::host_accessor hostAccess(buffer);
+
+        for (size_t i = 0; i < N; i++) {
+            std::cout << hostAccess[i] << " ";
+        }
+        std::cout << "\n";
+    }
+
+    // myData is updated when myBuffer is
+    // destroyed upon exiting scope
+    for (size_t i = 0; i < N; i++) {
+        std::cout << data[i] << " ";
+    }
+    std::cout << std::endl;
     return true;
 }
 
@@ -315,11 +348,11 @@ bool OneAPIManager::SYCLHelloWorld() {
 }
 
 bool OneAPIManager::SYCLCount() {
-    constexpr uint64_t  SIZE    = 16;
+    constexpr size_t  SIZE    = 16;
 
     std::cout << "Running task: " << m.tasks[SYCLCOUNT] << '.' << std::endl;
 
-    std::array<int, SIZE> data;
+    std::array<uint64_t, SIZE> data;
 
     // Create buffer using host allocated "data" array
     sycl::buffer B{ data };
@@ -334,7 +367,7 @@ bool OneAPIManager::SYCLCount() {
     // Obtain access to buffer on the host
     // Will wait for device kernel to execute to generate data
     sycl::host_accessor A{ B };
-    for (int i = 0; i < SIZE; i++) {
+    for (size_t i = 0; i < SIZE; i++) {
         std::cout << "data[" << i << "] = " << A[i] << "\n";
     }
     return true;
