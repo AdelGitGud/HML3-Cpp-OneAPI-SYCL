@@ -95,7 +95,7 @@ void OneAPIManager::Run() {
         return;
     }
 
-    // Restart to device selection if user doesnt wish to exist
+    // Restart to device selection if user doesn't wish to exist
     char exitInput;
     std::cout << "Exit?" << "\t[Y]es/[N]o" << std::endl;
     while (std::cin.get(exitInput)) {
@@ -133,7 +133,7 @@ std::optional<const onedal::table> OneAPIManager::GetTableFromFile(const std::st
     onedal::csv::data_source dataSource{ tryPath };
     dataSource.set_delimiter(',');
     dataSource.set_parse_header(true);
-    return onedal::read<const onedal::table>(m.queues[m.primaryDevice], dataSource); // Throws exception in debug when running on the gpu. Doesnt seem to cause issue in current testing cases however.
+    return onedal::read<const onedal::table>(m.queues[m.primaryDevice], dataSource); // Throws exception in debug when running on the gpu. Doesn't seem to cause issue in current testing cases however.
 }
 
 void OneAPIManager::PrintBasicTableDescriptor(const onedal::table& table) {
@@ -168,7 +168,7 @@ bool OneAPIManager::SelectAmongNumOptions(uint64_t& selector, const uint64_t& se
         return SelectAmongNumOptions(selector, selectionSize);
     }
     else if (selector >= selectionSize) {
-        // User inputed a number out of range
+        // User inputted a number out of range
         std::cout << name << "\"" << selector << "\" not found. Please enter a number between 0 and " << selectionSize - 1 << ":" << std::endl;
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -179,7 +179,7 @@ bool OneAPIManager::SelectAmongNumOptions(uint64_t& selector, const uint64_t& se
 }
 
 bool OneAPIManager::ListAndSelectDevices() {
-    std::cout << "Enter prefered device index:" << std::endl;
+    std::cout << "Enter preferred device index:" << std::endl;
 
     for (size_t i = 0; i < m.queues.size(); i++) {
         std::cout << '\t' << i << ") " << m.queues[i].get_device().get_info<sycl::info::device::name>() << std::endl;
@@ -227,7 +227,7 @@ bool OneAPIManager::ListAndRunTasks() {
     }
 }
 
-// ------ EXPERIMENTAL: Dont understand what I'm doing but this is fun ------
+// ------ EXPERIMENTAL: Don't understand what I'm doing but this is fun ------
 bool OneAPIManager::HOMLTesting() {
     constexpr uint64_t  NBROFCAT        = 10;
     constexpr uint64_t  INCOMESPLITS    = 5;
@@ -307,7 +307,7 @@ bool OneAPIManager::SYCLTesting() {
             sycl::accessor access(buffer, h);
 
             h.parallel_for(N, [=](sycl::id<1> i) {
-                access[i] += i;
+                access[i] += i + 1;
             });
         });
 
