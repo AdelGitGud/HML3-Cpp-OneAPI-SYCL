@@ -294,11 +294,7 @@ bool OneAPIManager::SYCLTesting() {
 
     std::cout << "Running task: " << m.tasks[SYCLEXP] << '.' << std::endl;
 
-    std::array<uint64_t, N> data;
-
-    for (size_t i = 0; i < N; i++) {
-        data[i] = 0;
-    }
+    std::array<uint64_t, N> data = { 0 };
 
     {
         sycl::buffer buffer(data);
