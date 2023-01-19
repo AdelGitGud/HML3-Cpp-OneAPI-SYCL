@@ -354,9 +354,9 @@ bool OneAPIManager::SYCLCount() {
     sycl::buffer B{ data };
 
     m.queues[m.primaryDevice].submit([&](sycl::handler& h) {
-    sycl::accessor A{ B, h };
-    h.parallel_for(SIZE, [=](auto& idx) {
-            A[idx] = idx;
+        sycl::accessor A{ B, h };
+        h.parallel_for(SIZE, [=](auto& idx) {
+                A[idx] = idx;
         });
     });
 
