@@ -91,13 +91,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ComputeManager.cpp" />
     <ClCompile Include="DPCPPConsoleApplication1.cpp" />
+    <ClCompile Include="LogManager.cpp" />
     <ClCompile Include="OneAPIManager.cpp" />
+    <ClCompile Include="RenderManager.cpp" />
+    <ClCompile Include="UserInputManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ComputeManager.h" />
     <ClInclude Include="DPData.h" />
     <ClInclude Include="HOMLData.h" />
+    <ClInclude Include="LogManager.h" />
     <ClInclude Include="OneAPIManager.h" />
+    <ClInclude Include="RenderManager.h" />
+    <ClInclude Include="UserInputManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
