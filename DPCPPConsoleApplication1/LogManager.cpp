@@ -1,7 +1,7 @@
 #include "LogManager.h"
 
 #ifdef _WIN32
-#pragma warning (disable : 4996)
+#pragma warning (disable : 4996) // disable deprecated warning
 #endif
 
 #include <time.h>
