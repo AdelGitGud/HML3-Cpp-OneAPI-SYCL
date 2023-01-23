@@ -1,5 +1,9 @@
 #include "LogManager.h"
 
+#ifdef _WIN32
+#pragma warning (disable : 4996)
+#endif
+
 #include <time.h>
 #include <stdarg.h>
 #include <string.h>
