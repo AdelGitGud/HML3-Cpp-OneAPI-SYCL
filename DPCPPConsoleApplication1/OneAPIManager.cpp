@@ -114,6 +114,18 @@ void OneAPIManager::Run() {
     }
 }
 
+size_t OneAPIManager::PrintDirectoryEntries(const std::string& dir, std::string& lastEntry)
+{
+    std::cout << "Select among available data: " << std::endl;
+    size_t i = 0;
+    for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(dir)) {
+        ++i;
+        lastEntry = entry.path().filename().string();
+        std::cout << '\t' << lastEntry << std::endl;
+    }
+    return i;
+}
+
 std::optional<const onedal::table> OneAPIManager::GetTableFromFile(const std::string& name, const std::string& path) {
     std::string tryPath = path + name;
 
@@ -213,14 +225,16 @@ bool OneAPIManager::ListAndRunTasks() {
     case NONE:
         std::cout << "No task selected." << std::endl;
         return true; // No task selected
-    case HOMLEXP:
-        return HOMLTesting();
-    case SYCLEXP:
-        return SYCLTesting();
+        
     case SYCLHW:
         return SYCLHelloWorld();
     case SYCLCOUNT:
         return SYCLCount();
+        
+    case HOMLEXP:
+        return HOMLTesting();
+    case SYCLEXP:
+        return SYCLTesting();
     default:
         std::cout << "Error task \"" << m.tasks[selectedTask] << "\" is listed but not implemented!!!" << std::endl;
         return false; 
@@ -238,8 +252,11 @@ bool OneAPIManager::HOMLTesting() {
     std::cout << "Running task: " << m.tasks[HOMLEXP] << '.' << std::endl;
 
     // Prints and loads selected data
-    PrintDirectoryEntries("data");
-    const std::optional<const onedal::table> data = GetTableFromFile(GetUserStringInput());
+    std::string selectedData = {};
+    if (PrintDirectoryEntries("data", selectedData) > 1) {
+		selectedData = GetUserStringInput();
+    }
+    const std::optional<const onedal::table> data = GetTableFromFile(selectedData);
     if (!data.has_value()) { // User aborted
         return false;
     }

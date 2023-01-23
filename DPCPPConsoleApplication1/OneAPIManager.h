@@ -19,6 +19,7 @@ public:
     void Run();
 
 private:
+    size_t PrintDirectoryEntries(const std::string& dir, std::string& lastEntry);
     std::optional<const oneapi::dal::table> GetTableFromFile(const std::string& name, const std::string& path = "data/");
     void PrintBasicTableDescriptor(const oneapi::dal::table& table);
 
@@ -41,13 +42,6 @@ private:
 
     inline bool CheckFile(const std::string& name) {
         return std::ifstream{ name }.good();
-    };
-
-    inline void PrintDirectoryEntries(const std::string& dir) {
-        std::cout << "Select among available data: " << std::endl;
-        for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(dir)) {
-            std::cout << '\t' << entry.path().filename() << std::endl;
-        }
     };
 
     inline const std::string GetUserStringInput() {
