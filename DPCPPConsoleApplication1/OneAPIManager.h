@@ -9,13 +9,18 @@
 
 #include <filesystem>
 
+#include "LogManager.h"
+#include "UserInputManager.h"
+#include "ComputeManager.h"
+#include "RenderManager.h"
+
 class OneAPIManager
 {
 public:
     OneAPIManager();
     ~OneAPIManager();
 
-    bool Init();
+    bool Init(const bool& useRenderManager = false);
     void Run();
 
 private:
@@ -57,6 +62,11 @@ private:
 
 private:
     struct Members {
+		LogManager* logManager = nullptr;
+		UserInputManager* userInputManager = nullptr;
+		ComputeManager* computeManager = nullptr;
+        RenderManager* renderManager = nullptr;
+        
         std::vector<sycl::queue> queues = {};
         uint64_t primaryDevice = 0;
 

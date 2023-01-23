@@ -1,5 +1,5 @@
 #pragma once
-class RenderManager
-{
+#include "BaseManager.h"
+class RenderManager :public BaseManager {
 };
 

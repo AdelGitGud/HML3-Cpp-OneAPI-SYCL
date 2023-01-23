@@ -78,7 +78,7 @@ OneAPIManager::OneAPIManager() {
 OneAPIManager::~OneAPIManager() {
 }
 
-bool OneAPIManager::Init() {
+bool OneAPIManager::Init(const bool& useRenderManager) {
     if (m.queues.empty()) {
         std::cout << "No compatible device found, exiting." << std::endl;
         return false;

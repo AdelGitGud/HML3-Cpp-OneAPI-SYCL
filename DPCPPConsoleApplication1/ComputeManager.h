@@ -1,5 +1,5 @@
 #pragma once
-class ComputeManager
-{
+#include "BaseManager.h"
+class ComputeManager : public BaseManager {
 };
 

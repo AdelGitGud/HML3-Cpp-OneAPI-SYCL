@@ -99,6 +99,7 @@
     <ClCompile Include="UserInputManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BaseManager.h" />
     <ClInclude Include="ComputeManager.h" />
     <ClInclude Include="DPData.h" />
     <ClInclude Include="HOMLData.h" />
