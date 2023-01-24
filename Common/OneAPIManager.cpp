@@ -243,11 +243,12 @@ bool OneAPIManager::ListAndRunTasks() {
 
 // ------ EXPERIMENTAL ------
 bool OneAPIManager::HOMLTesting() {
+	/*constexpr size_t	TESTSIZE = 20640;
     constexpr uint64_t  NBROFCAT        = 10;
     constexpr uint64_t  INCOMESPLITS    = 5;
     constexpr uint64_t  INCOMECAT       = 7;
     constexpr float     CATBINSSTEP     = 1.5f;
-    constexpr float     SPLITSCUTOFF    = 6.f;
+    constexpr float     SPLITSCUTOFF    = 6.f;*/
 
     std::cout << "Running task: " << m.tasks[HOMLEXP] << '.' << std::endl;
 
@@ -260,6 +261,7 @@ bool OneAPIManager::HOMLTesting() {
     if (!data.has_value()) { // User aborted
         return false;
     }
+	PrintBasicTableDescriptor(data.value());
     
     return true;
 }
