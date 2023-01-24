@@ -11,15 +11,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{126a8870-80e3-4e92-a666-e40179fc8394}</ProjectGuid>
+    <ProjectGuid>{A23627E4-CAE7-4EE6-B937-DD44413138D0}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>DPCPPConsoleApplication1</RootNamespace>
+    <RootNamespace>Common</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Client</ProjectName>
+    <ProjectName>Common</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>Intel(R) oneAPI DPC++ Compiler 2023</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -27,7 +27,7 @@
     <UseInteloneTBB>true</UseInteloneTBB>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>Intel(R) oneAPI DPC++ Compiler 2023</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -94,13 +94,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="DPCPPConsoleApplication1.cpp" />
-    <ClCompile Include="RenderManager.cpp" />
-    <ClCompile Include="UserInputManager.cpp" />
+    <ClInclude Include="BaseManager.h" />
+    <ClInclude Include="ComputeManager.h" />
+    <ClInclude Include="DPData.h" />
+    <ClInclude Include="HOMLData.h" />
+    <ClInclude Include="LogManager.h" />
+    <ClInclude Include="OneAPIManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RenderManager.h" />
-    <ClInclude Include="UserInputManager.h" />
+    <ClCompile Include="ComputeManager.cpp" />
+    <ClCompile Include="LogManager.cpp" />
+    <ClCompile Include="OneAPIManager.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

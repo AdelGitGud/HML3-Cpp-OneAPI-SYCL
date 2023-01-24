@@ -11,11 +11,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{126a8870-80e3-4e92-a666-e40179fc8394}</ProjectGuid>
+    <ProjectGuid>{C6E72E9F-915B-4CC2-9906-82E5C403BAEB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>DPCPPConsoleApplication1</RootNamespace>
+    <RootNamespace>Server</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Client</ProjectName>
+    <ProjectName>Server</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -94,13 +94,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="DPCPPConsoleApplication1.cpp" />
-    <ClCompile Include="RenderManager.cpp" />
-    <ClCompile Include="UserInputManager.cpp" />
+    <ClCompile Include="Server.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RenderManager.h" />
-    <ClInclude Include="UserInputManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
