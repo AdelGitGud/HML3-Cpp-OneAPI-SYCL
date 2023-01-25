@@ -102,6 +102,11 @@
     <ClInclude Include="RenderManager.h" />
     <ClInclude Include="UserInputManager.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Common.vcxproj">
+      <Project>{a23627e4-cae7-4ee6-b937-dd44413138d0}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
