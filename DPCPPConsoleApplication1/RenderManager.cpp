@@ -96,6 +96,7 @@ bool RenderManager::Init() {
     InitInstance();
     InitDebug();
     InitDevice();
+    return true;
 }
 
 void RenderManager::Shutdown() {
@@ -122,11 +123,11 @@ bool RenderManager::Run() {
 void RenderManager::InitInstance() {
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "idk";
+    appInfo.pApplicationName = "Client";
     appInfo.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
-	appInfo.pEngineName = "idk";
+	appInfo.pEngineName = "MLEngine";
 	appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
-    appInfo.apiVersion = VK_MAKE_VERSION(1, 2, 0);
+    appInfo.apiVersion = VK_MAKE_VERSION(1, 3, 0);
 
     VkInstanceCreateInfo instanceCreateInfo{};
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;

@@ -5,21 +5,24 @@
 
 int main(int argc, char* argv[]) {
     OneAPIManager test;
+    RenderManager rendererTest;
     
-    RenderManager renderer;
-	renderer.Init();
-    renderer.OpenWindow(L"Test window", 800, 600);
-
+    if (rendererTest.Init()) {
+        rendererTest.OpenWindow(L"Test window", 800, 600);
+    }
+	bool runGUI = true;
     std::thread testThread([&]{
-        while(renderer.Run());
+		while (runGUI) {
+			rendererTest.Run();
+		}
     });
 
     if (test.Init()) {
         test.Run();
     }
     
+    rendererTest.Shutdown();
     testThread.join();
-    renderer.Shutdown();
 
     return 0;
 }
