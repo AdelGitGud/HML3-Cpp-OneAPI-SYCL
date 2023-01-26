@@ -42,4 +42,3 @@ private:
 		FILE* logFile = nullptr;
 	}m;
 };
-

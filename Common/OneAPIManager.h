@@ -43,9 +43,7 @@ private:
         }
     };
 
-    inline bool CheckFile(const std::string& name) {
-        return std::ifstream{ name }.good();
-    };
+    inline bool CheckFile(const std::string& name) { return std::ifstream{ name }.good(); };
 
     inline const std::string GetUserStringInput() {
         std::string tmp;
@@ -66,7 +64,7 @@ private:
         std::vector<sycl::queue> queues = {};
         uint64_t primaryDevice = 0;
 
-        const std::string tasks[5] = {"NONE",
+        const std::string tasks[5] = { "NONE",
 
             "SYCL Hello World",
             "SYCL Learn to count",
@@ -76,4 +74,3 @@ private:
         };
     }m;
 };
-

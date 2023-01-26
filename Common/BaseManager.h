@@ -1,4 +1,5 @@
 #pragma once
+
 class BaseManager {
 public:
 	virtual bool Init() = 0;
