@@ -4,9 +4,12 @@
 
 class RenderManager : public BaseManager {
 public:
+	~RenderManager();
+
     bool Init() override;
-    void Shutdown() override;
+    
     Window* OpenWindow(const std::wstring& name, const uint32_t& width, const uint32_t& height);
+    void CloseWindow();
 
     bool Run();
 
@@ -18,22 +21,25 @@ public:
     uint32_t GetGfxFamilyIndex() const { return m.gfxFamilyIndex; };
 
 private:
+    void Shutdown() override;
+    void Draw();
+
     void InitInstance();
-    void DeInitInstance();
+    void ShutdownInstance();
 
     void InitDevice();
-    void DeInitDevice();
+    void ShutdownDevice();
 
     void SetupDebug();
     void InitDebug();
-    void DeInitDebug();
+    void ShutdownDebug();
 
 private:
     struct Members {
         VkInstance instance = VK_NULL_HANDLE;
+        VkPhysicalDevice gpu = VK_NULL_HANDLE;
         VkDevice device = VK_NULL_HANDLE;
         VkQueue queue = VK_NULL_HANDLE;
-        VkPhysicalDevice gpu = VK_NULL_HANDLE;
         VkPhysicalDeviceProperties gpuProps = {};
 
         uint32_t gfxFamilyIndex = 0;

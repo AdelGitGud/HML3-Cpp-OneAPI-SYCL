@@ -91,6 +91,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(VkDebugReportFlagsEXT flagMsg
 }
 #endif // BUILD_ENABLE_VULKAN_DEBUG
 
+RenderManager::~RenderManager() {
+    Shutdown();
+}
+
 bool RenderManager::Init() {
     SetupDebug();
     InitInstance();
@@ -100,24 +104,35 @@ bool RenderManager::Init() {
 }
 
 void RenderManager::Shutdown() {
-    delete m.window;
-    m.window = nullptr;
-    DeInitDevice();
-    DeInitDebug();
-    DeInitInstance();
+    CloseWindow();
+    ShutdownDevice();
+    ShutdownDebug();
+    ShutdownInstance();
 }
 
 Window* RenderManager::OpenWindow(const std::wstring& name, const uint32_t& width, const uint32_t& height) {
-	delete m.window;
+    CloseWindow();
     m.window = new Window(this, name, width, height);
     return m.window;
 }
 
+void RenderManager::CloseWindow() {
+    if (m.window) {
+        delete m.window;
+        m.window = nullptr;
+    }
+}
+
 bool RenderManager::Run() {
     if (m.window != nullptr) {
+		Draw();
         return m.window->Update();
     }
-    return true;
+    return false;
+}
+
+void RenderManager::Draw() {
+
 }
 
 void RenderManager::InitInstance() {
@@ -142,7 +157,7 @@ void RenderManager::InitInstance() {
 
 }
 
-void RenderManager::DeInitInstance() {
+void RenderManager::ShutdownInstance() {
     vkDestroyInstance(m.instance, VK_NULL_HANDLE);
     m.instance = VK_NULL_HANDLE;
 }
@@ -233,7 +248,7 @@ void RenderManager::InitDevice() {
 
 }
 
-void RenderManager::DeInitDevice() {
+void RenderManager::ShutdownDevice() {
     vkDestroyDevice(m.device, VK_NULL_HANDLE);
     m.device = VK_NULL_HANDLE;
 }
@@ -262,7 +277,7 @@ void RenderManager::InitDebug() {
     fvkCreateDebugReportCallbackEXT(m.instance, &m.debugCallbackCreateInfo, VK_NULL_HANDLE, &m.debugReport);
 }
 
-void RenderManager::DeInitDebug() {
+void RenderManager::ShutdownDebug() {
     fvkDestroyDebugReportCallbackEXT(m.instance, m.debugReport, VK_NULL_HANDLE);
     m.debugReport = VK_NULL_HANDLE;
 }
@@ -271,6 +286,6 @@ void RenderManager::DeInitDebug() {
 
 void RenderManager::SetupDebug() {};
 void RenderManager::InitDebug() {};
-void RenderManager::DeInitDebug() {};
+void RenderManager::ShutdownDebug() {};
 
 #endif // BUILD_ENABLE_VULKAN_DEBUG

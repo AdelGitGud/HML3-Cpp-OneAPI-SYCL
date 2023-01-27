@@ -18,8 +18,8 @@ Window::Window(class RenderManager* renderer,const std::wstring& name, const uin
 }
 
 Window::~Window() {
-    DeInitSwapchainImages();
-    DeInitSwapchain();
+    ShutdownSwapchainImages();
+    ShutdownSwapchain();
     DeInitSurface();
     DeInitOsWindow();
 }
@@ -119,7 +119,7 @@ void Window::InitSwapchain() {
     ErrorCheck(vkGetSwapchainImagesKHR(m.renderer->GetDevice(), m.swapchain, &m.swapchainImageCount, nullptr));
 }
 
-void Window::DeInitSwapchain() {
+void Window::ShutdownSwapchain() {
     vkDestroySwapchainKHR(m.renderer->GetDevice(), m.swapchain, nullptr);
 }
 
@@ -148,7 +148,7 @@ void Window::InitSwapchainImages() {
     }
 }
 
-void Window::DeInitSwapchainImages() {
+void Window::ShutdownSwapchainImages() {
     for (auto view : m.swapchainImageViewList) {
         vkDestroyImageView(m.renderer->GetDevice(), view, nullptr);
     }

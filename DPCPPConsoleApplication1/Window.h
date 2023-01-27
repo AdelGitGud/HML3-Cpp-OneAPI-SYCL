@@ -23,10 +23,10 @@ private:
     void DeInitSurface();
 
     void InitSwapchain();
-    void DeInitSwapchain();
+    void ShutdownSwapchain();
 
     void InitSwapchainImages();
-    void DeInitSwapchainImages();
+    void ShutdownSwapchainImages();
 
 private:
     struct Members {

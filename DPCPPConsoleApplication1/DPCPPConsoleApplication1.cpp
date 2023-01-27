@@ -12,8 +12,7 @@ int main(int argc, char* argv[]) {
     }
 	bool runGUI = true;
     std::thread testThread([&]{
-		while (runGUI) {
-			rendererTest.Run();
+		while (rendererTest.Run()) {
 		}
     });
 
@@ -21,7 +20,7 @@ int main(int argc, char* argv[]) {
         test.Run();
     }
     
-    rendererTest.Shutdown();
+	rendererTest.CloseWindow();
     testThread.join();
 
     return 0;
