@@ -8,6 +8,7 @@
 
 ### Client Dependencies:
 > Vulkan (with vk_khr_ray_query)  
+> Dear ImGui
 
 ### License:
 [MPL 2.0](LICENSE.md)
