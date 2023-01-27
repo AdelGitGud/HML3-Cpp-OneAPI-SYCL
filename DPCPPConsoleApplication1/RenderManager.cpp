@@ -118,6 +118,7 @@ Window* RenderManager::OpenWindow(const std::wstring& name, const uint32_t& widt
 
 void RenderManager::CloseWindow() {
     if (m.window) {
+		m.window->Close();
         delete m.window;
         m.window = nullptr;
     }
