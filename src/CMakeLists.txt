@@ -1,0 +1,31 @@
+cmake_minimum_required (VERSION 3.23.0)
+cmake_policy(SET CMP0069 NEW)
+
+SET(SRC_CLIENT client/*.cpp)
+
+SET(SRC_COMMON common/*.cpp)
+SET(HDR_COMMON 
+	common/HOMLData.h
+	common/DPData.h
+)
+
+SET(SRC_SERVER server/*.cpp)
+
+ADD_DEFINITIONS(-DHAVE_CONFIG_H=1 -DCURL_STATICLIB -DAL_LIBTYPE_STATIC)
+
+IF(WIN32)
+	ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
+ENDIF()
+
+IF(IS_64_BIT)
+	ADD_LIBRARY(common ${SRC_COMMON} ${HEADERS_COMMON})
+
+    ADD_EXECUTABLE(client
+        ${SRC_CLIENT}
+    )
+	ADD_EXECUTABLE(server
+	    ${SRC_SERVER}
+	)
+ELSE()
+	message( FATAL_ERROR "64bit only" )
+ENDIF()
