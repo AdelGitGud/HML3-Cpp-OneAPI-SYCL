@@ -11,6 +11,8 @@ enum LOG_LEVEL { LOG_LEVEL_INFO,
 
 class LogManager : public BaseManager {
 public:
+	LogManager();
+	~LogManager() override;
 	bool Init() override;
 	void Shutdown() override;
 	void Log(LOG_LEVEL& level, const char* fmt, ...);

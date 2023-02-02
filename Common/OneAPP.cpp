@@ -1,4 +1,4 @@
-#include "OneAPIManager.h"
+#include "OneAPP.h"
 
 #include <vector>
 #include <string>
@@ -58,35 +58,26 @@ std::ostream& operator<<(std::ostream& stream, const onedal::table& table) {
     return stream;
 };
 
-static auto exceptionHandler = [](sycl::exception_list e_list)->void {
-    for (std::exception_ptr const& e : e_list) {
-        try {
-            std::rethrow_exception(e);
-        } catch (std::exception const& e) {
-            std::cout << "!!!Failure!!!" << std::endl;
-            std::terminate();
-        }
-    }
-};
-
-OneAPIManager::OneAPIManager() {
-    m.queues.reserve(2);
-    AddDevice(&sycl::cpu_selector_v, exceptionHandler);
-    AddDevice(&sycl::gpu_selector_v, exceptionHandler);
+OneAPP::OneAPP() {
+    m.computeManager = new ComputeManager;
 }
 
-OneAPIManager::~OneAPIManager() {
+OneAPP::~OneAPP() {
+    delete m.computeManager;
 }
 
-bool OneAPIManager::Init(const bool& useRenderManager) {
-    if (m.queues.empty()) {
-        std::cout << "No compatible device found, exiting." << std::endl;
+bool OneAPP::Init() {
+    if (!m.computeManager->Init()) {
         return false;
     }
     return true;
 }
 
-void OneAPIManager::Run() {
+void OneAPP::Shutdown() {
+    m.computeManager->Shutdown();
+}
+
+void OneAPP::Run() {
     if (!ListAndSelectDevices()) { // User aborted
         return;
     }
@@ -114,7 +105,7 @@ void OneAPIManager::Run() {
     }
 }
 
-size_t OneAPIManager::PrintDirectoryEntries(const std::string& dir, std::string& lastEntry)
+size_t OneAPP::PrintDirectoryEntries(const std::string& dir, std::string& lastEntry)
 {
     std::cout << "Select among available data: " << std::endl;
     size_t i = 0;
@@ -126,7 +117,7 @@ size_t OneAPIManager::PrintDirectoryEntries(const std::string& dir, std::string&
     return i;
 }
 
-std::optional<const onedal::table> OneAPIManager::GetTableFromFile(const std::string& name, const std::string& path) {
+std::optional<const onedal::table> OneAPP::GetTableFromFile(const std::string& name, const std::string& path) {
     std::string tryPath = path + name;
 
     if (CheckFile(tryPath + ".csv")) {
@@ -145,11 +136,11 @@ std::optional<const onedal::table> OneAPIManager::GetTableFromFile(const std::st
     onedal::csv::data_source dataSource{ tryPath };
     dataSource.set_delimiter(',');
     dataSource.set_parse_header(true);
-    return onedal::read<const onedal::table>(m.queues[m.primaryDevice], dataSource); // Throws exception in debug when running on the gpu. Doesn't seem to cause issue in current testing cases however.
+    return onedal::read<const onedal::table>(m.computeManager->GetPrimaryQueue(), dataSource); // Throws exception in debug when running on the gpu. Doesn't seem to cause issue in current testing cases however.
 }
 
-void OneAPIManager::PrintBasicTableDescriptor(const onedal::table& table) {
-    const onedal::basic_statistics::compute_result result = onedal::compute(m.queues[m.primaryDevice], onedal::basic_statistics::descriptor{}, table);
+void OneAPP::PrintBasicTableDescriptor(const oneapi::dal::table& table) {
+    const onedal::basic_statistics::compute_result result = onedal::compute(m.computeManager->GetPrimaryQueue(), onedal::basic_statistics::descriptor{}, table);
 
     std::cout << "Column count: " << table.get_column_count() << std::endl;
     std::cout << "Row count : " << table.get_row_count() << std::endl;
@@ -167,7 +158,7 @@ void OneAPIManager::PrintBasicTableDescriptor(const onedal::table& table) {
     std::cout << "Variation:\n" << result.get_variation() << std::endl;
 }
 
-bool OneAPIManager::SelectAmongNumOptions(uint64_t& selector, const uint64_t& selectionSize, const std::string& name) {
+bool OneAPP::SelectAmongNumOptions(uint64_t& selector, const uint64_t& selectionSize, const std::string& name) {
     if (!(std::cin >> selector)) {
         if (std::cin.eof()) {
             std::cout << "User aborted!" << std::endl;
@@ -190,24 +181,24 @@ bool OneAPIManager::SelectAmongNumOptions(uint64_t& selector, const uint64_t& se
     return true;
 }
 
-bool OneAPIManager::ListAndSelectDevices() {
+bool OneAPP::ListAndSelectDevices() {
     std::cout << "Enter preferred device index:" << std::endl;
 
-    for (size_t i = 0; i < m.queues.size(); i++) {
-        std::cout << '\t' << i << ") " << m.queues[i].get_device().get_info<sycl::info::device::name>() << std::endl;
+    for (size_t i = 0; i < m.computeManager->GetQueueCount(); i++) {
+        std::cout << '\t' << i << ") " << m.computeManager->GetQueue(i).get_device().get_info<sycl::info::device::name>() << std::endl;
     }
 
-    if (!SelectAmongNumOptions(m.primaryDevice, m.queues.size(), "Device")) { // User aborted
+    if (!SelectAmongNumOptions(m.computeManager->GetPrimaryDevice(), m.computeManager->GetQueueCount(), "Device")) { // User aborted
         return false;
     }
 
     // Device selected successfully, proceeding
     std::cout << "Running on device:" << std::endl;
-    std::cout << '\t' << m.queues[m.primaryDevice].get_device().get_info<sycl::info::device::name>() << std::endl;
+    std::cout << '\t' << m.computeManager->GetPrimaryQueue().get_device().get_info<sycl::info::device::name>() << std::endl;
     return true;
 }
 
-bool OneAPIManager::ListAndRunTasks() {
+bool OneAPP::ListAndRunTasks() {
     constexpr uint64_t  TASKSCOUNT   = sizeof(m.tasks) / sizeof(m.tasks[0]);
 
     uint64_t selectedTask;
@@ -242,7 +233,7 @@ bool OneAPIManager::ListAndRunTasks() {
 }
 
 // ------ EXPERIMENTAL ------
-bool OneAPIManager::HOMLTesting() {
+bool OneAPP::HOMLTesting() {
 	/*constexpr size_t	TESTSIZE = 20640;
     constexpr uint64_t  NBROFCAT        = 10;
     constexpr uint64_t  INCOMESPLITS    = 5;
@@ -267,7 +258,7 @@ bool OneAPIManager::HOMLTesting() {
 }
 
 // ------ EXPERIMENTAL ------
-bool OneAPIManager::SYCLTesting() {
+bool OneAPP::SYCLTesting() {
     constexpr size_t N = 69;
 
     std::cout << "Running task: " << m.tasks[SYCLEXP] << '.' << std::endl;
@@ -277,7 +268,7 @@ bool OneAPIManager::SYCLTesting() {
     {
         sycl::buffer buffer(data);
 
-        m.queues[m.primaryDevice].submit([&](sycl::handler& h) {
+        m.computeManager->GetPrimaryQueue().submit([&](sycl::handler& h) {
             sycl::accessor access(buffer, h);
 
             h.parallel_for(N, [=](sycl::id<1> i) {
@@ -302,26 +293,26 @@ bool OneAPIManager::SYCLTesting() {
     return true;
 }
 
-bool OneAPIManager::SYCLHelloWorld() {
+bool OneAPP::SYCLHelloWorld() {
     std::cout << "Running task: " << m.tasks[SYCLHW] << '.' << std::endl;
 
     const DPHelloWorld data;
-    char* result = sycl::malloc_shared<char>(data.sz, m.queues[m.primaryDevice]);
+    char* result = sycl::malloc_shared<char>(data.sz, m.computeManager->GetPrimaryQueue());
 
     std::memcpy(result, data.secret.data(), data.sz);
 
-    m.queues[m.primaryDevice].submit([&](sycl::handler& h) {
+    m.computeManager->GetPrimaryQueue().submit([&](sycl::handler& h) {
         h.parallel_for(data.sz, [=](auto& i) {
             result[i] -= 1;
         });
     }).wait();
 
     std::cout << result << std::endl;
-    free(result, m.queues[m.primaryDevice]);
+    free(result, m.computeManager->GetPrimaryQueue());
     return true;
 }
 
-bool OneAPIManager::SYCLCount() {
+bool OneAPP::SYCLCount() {
     constexpr size_t  SIZE    = 16;
 
     std::cout << "Running task: " << m.tasks[SYCLCOUNT] << '.' << std::endl;
@@ -331,7 +322,7 @@ bool OneAPIManager::SYCLCount() {
     // Create buffer using host allocated "data" array
     sycl::buffer B{ data };
 
-    m.queues[m.primaryDevice].submit([&](sycl::handler& h) {
+    m.computeManager->GetPrimaryQueue().submit([&](sycl::handler& h) {
         sycl::accessor A{ B, h };
         h.parallel_for(SIZE, [=](auto& idx) {
                 A[idx] = idx;

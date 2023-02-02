@@ -3,6 +3,8 @@
 
 class UserInputManager : public BaseManager {
 public:
+	UserInputManager();
+	~UserInputManager() override;
 	bool Init() override;
 	void Shutdown() override;
 

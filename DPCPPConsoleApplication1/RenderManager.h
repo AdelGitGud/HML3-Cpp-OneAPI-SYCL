@@ -2,11 +2,12 @@
 #include "BaseManager.h"
 #include "Window.h"
 
-class RenderManager : public BaseManager {
+class RenderManager :public BaseManager {
 public:
-	~RenderManager();
-
+    RenderManager();
+    ~RenderManager() override;
     bool Init() override;
+    void Shutdown() override;
     
     Window* OpenWindow(const std::wstring& name, const uint32_t& width, const uint32_t& height);
     void CloseWindow();

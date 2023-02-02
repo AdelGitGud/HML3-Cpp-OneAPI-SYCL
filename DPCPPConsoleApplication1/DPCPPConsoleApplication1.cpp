@@ -1,10 +1,10 @@
-#include "OneAPIManager.h"
+#include "OneAPP.h"
 #include "RenderManager.h"
 
 #include <thread>
 
 int main(int argc, char* argv[]) {
-    OneAPIManager test;
+    OneAPP test;
     RenderManager rendererTest;
     
     if (rendererTest.Init()) {
@@ -18,6 +18,7 @@ int main(int argc, char* argv[]) {
 
     if (test.Init()) {
         test.Run();
+        test.Shutdown();
     }
     
 	rendererTest.CloseWindow();
