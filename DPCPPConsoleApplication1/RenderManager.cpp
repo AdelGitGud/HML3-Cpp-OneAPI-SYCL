@@ -91,6 +91,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(VkDebugReportFlagsEXT flagMsg
 }
 #endif // BUILD_ENABLE_VULKAN_DEBUG
 
+RenderManager::RenderManager() {
+}
+
 RenderManager::~RenderManager() {
     Shutdown();
 }
