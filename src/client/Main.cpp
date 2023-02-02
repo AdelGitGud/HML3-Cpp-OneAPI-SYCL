@@ -1,10 +1,11 @@
-#include "OneAPIManager.h"
+#include "OneAPP.h"
 
 int main(int argc, char* argv[]) {
-    OneAPIManager test;
+    OneAPP test;
 
     if (test.Init()) {
         test.Run();
+        test.Shutdown();
     }
 
     return 0;
