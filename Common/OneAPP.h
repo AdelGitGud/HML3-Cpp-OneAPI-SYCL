@@ -4,21 +4,18 @@
 #define ONEDAL_DATA_PARALLEL
 #endif
 
-#include "oneapi/dal.hpp"
-#include <sycl/sycl.hpp>
-
 #include <filesystem>
 
 #include "LogManager.h"
 #include "ComputeManager.h"
 
-class OneAPIManager
-{
+class OneAPP : public BaseManager {
 public:
-    OneAPIManager();
-    ~OneAPIManager();
+    OneAPP();
+    ~OneAPP() override;
 
-    bool Init(const bool& useRenderManager = false);
+	bool Init() override;
+	void Shutdown() override;
     void Run();
 
 private:
@@ -34,14 +31,6 @@ private:
     bool SYCLTesting();
     bool SYCLHelloWorld();
     bool SYCLCount();
-
-    inline void AddDevice(int (*selector)(const sycl::device&), const std::function<void(sycl::exception_list)>& AsyncHandler) {
-        try {
-            m.queues.push_back(sycl::queue{ sycl::ext::oneapi::detail::select_device(selector), AsyncHandler });
-        } catch (...) {
-            return;
-        }
-    };
 
     inline bool CheckFile(const std::string& name) {
         return std::ifstream{ name }.good();
@@ -62,9 +51,6 @@ private:
     struct Members {
 		LogManager* logManager = nullptr;
 		ComputeManager* computeManager = nullptr;
-        
-        std::vector<sycl::queue> queues = {};
-        uint64_t primaryDevice = 0;
 
         const std::string tasks[5] = {"NONE",
 

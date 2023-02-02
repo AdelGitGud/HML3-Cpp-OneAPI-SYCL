@@ -30,7 +30,7 @@
     <ClInclude Include="LogManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="OneAPIManager.h">
+    <ClInclude Include="OneAPP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -41,7 +41,10 @@
     <ClCompile Include="LogManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OneAPIManager.cpp">
+    <ClCompile Include="OneAPP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

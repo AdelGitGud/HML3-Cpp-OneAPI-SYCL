@@ -99,12 +99,13 @@
     <ClInclude Include="DPData.h" />
     <ClInclude Include="HOMLData.h" />
     <ClInclude Include="LogManager.h" />
-    <ClInclude Include="OneAPIManager.h" />
+    <ClInclude Include="OneAPP.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BaseManager.cpp" />
     <ClCompile Include="ComputeManager.cpp" />
     <ClCompile Include="LogManager.cpp" />
-    <ClCompile Include="OneAPIManager.cpp" />
+    <ClCompile Include="OneAPP.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
