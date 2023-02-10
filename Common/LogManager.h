@@ -15,33 +15,22 @@ public:
 	~LogManager() override;
 	bool Init() override;
 	void Shutdown() override;
-	void Log(LOG_LEVEL& level, const char* fmt, ...);
-	
-	inline void SetFilePrintLevel(LOG_LEVEL& level) {
-		m.filePrintLevel = level;
-	};
-
-	inline LOG_LEVEL GetFilePrintLevel() {
-		return m.filePrintLevel;
-	};
-
-	inline void SetPrintTimeOnInfoLog(bool& printTime) {
-		m.printTimeOnInfoLog = printTime;
-	};
-	
-	inline bool GetPrintTimeOnInfoLog() {
-		return m.printTimeOnInfoLog;
-	};
-	
-	inline void SetPrintTimeOnInfoLog(LOG_LEVEL& level) {
-		m.printTimeOnInfoLog = level;
-	};
+	void Log(LOG_LEVEL level, const char* fmt, ...);
 
 private:
 	struct Members {
-		LOG_LEVEL filePrintLevel = LOG_LEVEL_FATAL;
+		LOG_LEVEL filePrintLevel = LOG_LEVEL_INFO;
 		bool printTimeOnInfoLog = false;
 		FILE* logFile = nullptr;
 	}m;
+
+public:
+	inline void SetFilePrintLevel(LOG_LEVEL& level) { m.filePrintLevel = level;	}
+	inline LOG_LEVEL GetFilePrintLevel() { return m.filePrintLevel; }
+	
+	inline void SetPrintTimeOnInfoLog(bool& printTime) { m.printTimeOnInfoLog = printTime; }
+	inline bool GetPrintTimeOnInfoLog() { return m.printTimeOnInfoLog; }
+	
+private:
 };
 

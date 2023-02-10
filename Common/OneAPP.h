@@ -6,8 +6,9 @@
 
 #include <filesystem>
 
-#include "LogManager.h"
-#include "ComputeManager.h"
+#include "oneapi/dal.hpp"
+
+#include "BaseManager.h"
 
 class OneAPP : public BaseManager {
 public:
@@ -20,7 +21,7 @@ public:
 
 private:
     size_t PrintDirectoryEntries(const std::string& dir, std::string& lastEntry);
-    std::optional<const oneapi::dal::table> GetTableFromFile(const std::string& name, const std::string& path = "data/");
+    std::optional<const oneapi::dal::table> GetTableFromFile(const std::string& name, const std::string& path = "data/"); // Embarrassing test function
     void PrintBasicTableDescriptor(const oneapi::dal::table& table);
 
     bool SelectAmongNumOptions(uint64_t& selector, const uint64_t& selectionSize, const std::string& name = "Option");
@@ -32,25 +33,10 @@ private:
     bool SYCLHelloWorld();
     bool SYCLCount();
 
-    inline bool CheckFile(const std::string& name) {
-        return std::ifstream{ name }.good();
-    };
-
-    inline const std::string GetUserStringInput() {
-        std::string tmp;
-        std::cin >> tmp;
-        if (std::cin.eof()) {
-            std::cout << "User aborted!" << std::endl;
-            return {};
-        } else {
-            return tmp;
-        }
-    };
-
 private:
     struct Members {
-		LogManager* logManager = nullptr;
-		ComputeManager* computeManager = nullptr;
+		class LogManager* logManager = nullptr;
+		class ComputeManager* computeManager = nullptr;
 
         const std::string tasks[5] = {"NONE",
 
@@ -61,5 +47,22 @@ private:
             "SYCL Testing (EXP)"
         };
     }m;
+
+public:
+
+private:
+    inline bool CheckFile(const std::string& name) { return std::ifstream{ name }.good(); }
+
+    inline const std::string GetUserStringInput() {
+        std::string tmp;
+        std::cin >> tmp;
+        if (std::cin.eof()) {
+            std::cout << "User aborted!" << std::endl;
+            return {};
+        }
+        else {
+            return tmp;
+        }
+    }
 };
 

@@ -10,7 +10,15 @@
 #include "HOMLData.h"
 #include "DPData.h"
 
+#include "LogManager.h"
+#include "ComputeManager.h"
+
 namespace onedal = oneapi::dal;
+
+#define LOG_INFO(fmt, ...) m.logManager->Log(LOG_LEVEL_INFO, fmt, __VA_ARGS__)
+#define LOG_WARNING(fmt, ...) m.logManager->Log(LOG_LEVEL_WARNING, fmt, __VA_ARGS__)
+#define LOG_ERROR(fmt, ...) m.logManager->Log(LOG_LEVEL_ERROR, fmt, __VA_ARGS__)
+#define LOG_FATAL(fmt, ...) m.logManager->Log(LOG_LEVEL_FATAL, fmt, __VA_ARGS__)
 
 enum TASKS {
     NONE,
@@ -59,14 +67,20 @@ std::ostream& operator<<(std::ostream& stream, const onedal::table& table) {
 };
 
 OneAPP::OneAPP() {
+    m.logManager = new LogManager;
     m.computeManager = new ComputeManager;
 }
 
 OneAPP::~OneAPP() {
     delete m.computeManager;
+	delete m.logManager;
 }
 
 bool OneAPP::Init() {
+	if (!m.logManager->Init()) {
+		return false;
+	}
+    
     if (!m.computeManager->Init()) {
         return false;
     }
@@ -75,6 +89,7 @@ bool OneAPP::Init() {
 
 void OneAPP::Shutdown() {
     m.computeManager->Shutdown();
+	m.logManager->Shutdown();
 }
 
 void OneAPP::Run() {
@@ -107,7 +122,7 @@ void OneAPP::Run() {
 
 size_t OneAPP::PrintDirectoryEntries(const std::string& dir, std::string& lastEntry)
 {
-    std::cout << "Select among available data: " << std::endl;
+	LOG_INFO("Select among available data:\n");
     size_t i = 0;
     for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(dir)) {
         ++i;
