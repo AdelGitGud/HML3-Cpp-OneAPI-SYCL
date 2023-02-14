@@ -99,6 +99,7 @@
     <ClInclude Include="DPData.h" />
     <ClInclude Include="HOMLData.h" />
     <ClInclude Include="LogManager.h" />
+    <ClInclude Include="Matrix.h" />
     <ClInclude Include="OneAPP.h" />
   </ItemGroup>
   <ItemGroup>
