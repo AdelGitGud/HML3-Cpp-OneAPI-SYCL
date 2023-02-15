@@ -101,6 +101,7 @@
     <ClInclude Include="LogManager.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="OneAPP.h" />
+    <ClInclude Include="OneMath.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BaseManager.cpp" />

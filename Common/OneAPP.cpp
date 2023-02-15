@@ -278,6 +278,11 @@ bool OneAPP::SYCLTesting() {
 
     std::cout << "Running task: " << m.tasks[SYCLEXP] << '.' << std::endl;
 
+    onemtx::Matrix<float> testMtxA(N, N, m.computeManager->GetPrimaryQueue());
+    onemtx::Matrix<float> testMtxB(testMtxA, m.computeManager->GetPrimaryQueue());
+    onemtx::Matrix<float> testMtxC(testMtxB);
+    testMtxA = testMtxC;
+
     std::array<uint64_t, N> data = { 0 };
 
     {

@@ -1,7 +1,7 @@
 #pragma once
 #include "BaseManager.h"
 
-#include <sycl/sycl.hpp>
+#include "OneMath.h"
 
 class ComputeManager : public BaseManager {
 public:

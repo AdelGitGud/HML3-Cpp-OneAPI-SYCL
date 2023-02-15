@@ -36,6 +36,9 @@
     <ClInclude Include="Matrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OneMath.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ComputeManager.cpp">
