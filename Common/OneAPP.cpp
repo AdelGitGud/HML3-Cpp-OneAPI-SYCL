@@ -278,9 +278,11 @@ bool OneAPP::SYCLTesting() {
 
     std::cout << "Running task: " << m.tasks[SYCLEXP] << '.' << std::endl;
 
-    onemtx::Matrix<float> testMtxA(N, N, m.computeManager->GetPrimaryQueue());
-    onemtx::Matrix<float> testMtxB(testMtxA, m.computeManager->GetPrimaryQueue());
-    onemtx::Matrix<float> testMtxC(testMtxB);
+    std::array<size_t, N*N> matrixFormat = { 69, 420 };
+
+    onemtx::SMatrix<float, matrixFormat.size()> testMtxA(matrixFormat, m.computeManager->GetPrimaryQueue());
+    onemtx::SMatrix<uint64_t, testMtxA.dim.size()> testMtxB(testMtxA, m.computeManager->GetPrimaryQueue());
+    onemtx::SMatrix<double, testMtxB.dim.size()> testMtxC(testMtxB);
     testMtxA = testMtxC;
 
     std::array<uint64_t, N> data = { 0 };
