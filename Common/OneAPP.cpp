@@ -275,43 +275,26 @@ bool OneAPP::HOMLTesting() {
 // ------ EXPERIMENTAL ------
 bool OneAPP::SYCLTesting() {
     constexpr size_t N = 69;
+    constexpr size_t M = 420;
+    constexpr size_t DIMS = 2;
 
     std::cout << "Running task: " << m.tasks[SYCLEXP] << '.' << std::endl;
 
-    std::array<size_t, N*N> matrixFormat = { 69, 420 };
+    std::array<size_t, DIMS> matrixFormat = { N, M };
 
-    onemtx::SMatrix<float, matrixFormat.size()> testMtxA(matrixFormat, m.computeManager->GetPrimaryQueue());
-    onemtx::SMatrix<uint64_t, testMtxA.dim.size()> testMtxB(testMtxA, m.computeManager->GetPrimaryQueue());
-    onemtx::SMatrix<double, testMtxB.dim.size()> testMtxC(testMtxB);
+    onemtx::Matrix<float, DIMS> testMtxA;
+    onemtx::MakeHMatrix(testMtxA, matrixFormat, m.computeManager->GetPrimaryQueue());
+
+    m.computeManager->GetPrimaryQueue().wait_and_throw();
+
+    onemtx::Matrix<float, DIMS> testMtxB;
+    onemtx::MakeHMatrix(testMtxB, testMtxA, m.computeManager->GetPrimaryQueue());
+
+    onemtx::Matrix<float, DIMS> testMtxC;
+    onemtx::MakeHMatrix(testMtxC, testMtxB);
+
     testMtxA = testMtxC;
 
-    std::array<uint64_t, N> data = { 0 };
-
-    {
-        sycl::buffer buffer(data);
-
-        m.computeManager->GetPrimaryQueue().submit([&](sycl::handler& h) {
-            sycl::accessor access(buffer, h);
-
-            h.parallel_for(N, [=](sycl::id<1> i) {
-                access[i] += i + 1;
-            });
-        });
-
-        sycl::host_accessor hostAccess(buffer);
-
-        for (size_t i = 0; i < N; i++) {
-            std::cout << hostAccess[i] << " ";
-        }
-        std::cout << "\n";
-    }
-
-    // myData is updated when myBuffer is
-    // destroyed upon exiting scope
-    for (size_t i = 0; i < N; i++) {
-        std::cout << data[i] << " ";
-    }
-    std::cout << std::endl;
     return true;
 }
 

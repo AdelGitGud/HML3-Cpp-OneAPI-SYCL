@@ -109,6 +109,9 @@
     <ClCompile Include="LogManager.cpp" />
     <ClCompile Include="OneAPP.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Matrix.inl" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
