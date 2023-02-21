@@ -274,29 +274,36 @@ bool OneAPP::HOMLTesting() {
 
 // ------ EXPERIMENTAL ------
 bool OneAPP::SYCLTesting() {
-    constexpr size_t N = 2;
-    constexpr size_t M = 2;
     constexpr size_t DIMS = 2;
+    constexpr std::array<size_t, DIMS> matrixFormat = { 69, 420 };
 
     std::cout << "Running task: " << m.tasks[SYCLEXP] << '.' << std::endl;
 
-    std::array<size_t, DIMS> matrixFormat = { N, M };
-
     onemtx::AllocPtr AFunc = &sycl::malloc_host;
 
-    onemtx::Matrix<float, DIMS> testMtxA(matrixFormat, m.computeManager->GetPrimaryQueue(), AFunc);
+    onemtx::MatrixData<float, DIMS, matrixFormat> testMtxA(m.computeManager->GetPrimaryQueue(), AFunc);
     if (testMtxA.data == nullptr) {
 		std::cout << "Failed to allocate memory for matrix A!" << std::endl; // IT IS WHAT IT IS...
 		return false;
 	}
 
-    std::cout << "Matrix A:" << testMtxA[0][0] << std::endl;
+    testMtxA[0][0] = 1.f;
+    testMtxA[1][1] = 2.f;
 
-    onemtx::Matrix<float, DIMS> testMtxB(testMtxA, m.computeManager->GetPrimaryQueue(), AFunc);
+    std::cout << "Matrix A:" << testMtxA[0][0] << " | " << testMtxA[1][1] << std::endl;
 
-    onemtx::Matrix<float, DIMS> testMtxC;
+    onemtx::MatrixData<float, DIMS, matrixFormat> testMtxB(testMtxA, m.computeManager->GetPrimaryQueue(), AFunc);
+    std::cout << "Matrix B:" << testMtxB[0][0] << " | " << testMtxB[1][1] << std::endl;
 
-    testMtxA = testMtxC;
+    onemtx::MatrixData<float, DIMS, matrixFormat> testMtxC(testMtxB, AFunc);
+    std::cout << "Matrix C:" << testMtxC[0][0] << " | " << testMtxC[1][1] << std::endl;
+
+    testMtxA[0][0] = 420.f;
+    testMtxA[1][1] = 69.f;
+
+    std::cout << "Matrix A:" << testMtxA[0][0] << " | " << testMtxA[1][1] << std::endl;
+    std::cout << "Matrix B:" << testMtxB[0][0] << " | " << testMtxB[1][1] << std::endl;
+    std::cout << "Matrix C:" << testMtxC[0][0] << " | " << testMtxC[1][1] << std::endl;
 
     return true;
 }

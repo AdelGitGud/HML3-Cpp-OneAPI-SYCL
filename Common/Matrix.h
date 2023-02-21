@@ -6,101 +6,110 @@
 
  // TODO - complete
 
-// Might switch away from #define
-#define Vec2HF Matrix<sycl::half, 1>
-#define Vec2F Matrix<float, 1>
-#define Vec2D Matrix<double, 1>
-#define Vec2SC Matrix<sycl::schar, 1>
-#define Vec2UC Matrix<sycl::uchar, 1>
-#define Vec2SI Matrix<int32_t, 1>
-#define Vec2UI Matrix<uint32_t, 1>
-
-#define Vec3HF Matrix<sycl::half, 1>
-#define Vec3F Matrix<float, 1>
-#define Vec3D Matrix<double, 1>
-#define Vec3SC Matrix<sycl::schar, 1>
-#define Vec3UC Matrix<sycl::uchar, 1>
-#define Vec3SI Matrix<int32_t, 1>
-#define Vec3UI Matrix<uint32_t, 1>
-
 namespace onemtx {
 	using AllocPtr = void* (*)(size_t, const sycl::queue&, const sycl::detail::code_location&);
-
-	template <typename T, size_t N>
-	struct Matrix {
+	template <typename T, size_t U, std::array<size_t, U> D>
+	struct MatrixData {
 		sycl::queue* queue = nullptr;
-		std::array<size_t, N> dim = {};
 		T* data = nullptr;
+		std::array<size_t, U> dimLengths = D;
 
-		Matrix() = default;
-		Matrix(const std::array<size_t, N>& dimensions, sycl::queue& q, void* allocFunc);
-		Matrix(const T& arr, const std::array<size_t, N>& dimensions, sycl::queue& q, void* allocFunc);
-		Matrix(const Matrix<T, N>& a, sycl::queue& q, void* allocFunc);
-		Matrix(const Matrix<T, N>& a, void* allocFunc);
+		MatrixData() = default;
+		template <typename FuncPTR>
+		MatrixData(sycl::queue& q, FuncPTR allocFunc);
+		template <typename FuncPTR>
+		MatrixData(const T& arr, sycl::queue& q, FuncPTR allocFunc);
+		template <typename FuncPTR>
+		MatrixData(const MatrixData<T, U, D>& a, sycl::queue& q, FuncPTR allocFunc);
+		template <typename FuncPTR>
+		MatrixData(const MatrixData<T, U, D>& a, FuncPTR allocFunc);
 
-		~Matrix();
+		~MatrixData();
 
 		inline T* operator[](size_t row) {
-			return data + (row * dim[0]);
+			return data + (row * dimLengths[0]);
 		}
 
-		inline Matrix<T, N> operator+(const Matrix<T, N>& a) {
+		inline MatrixData<T, U, D> operator+(const MatrixData<T, U, D>& a) {
 
 		}
-		inline Matrix<T, N> operator+(const T scalar) {
+		inline MatrixData<T, U, D> operator+(const T scalar) {
 
 		}
-		inline Matrix<T, N> operator-(const Matrix<T, N>& a) {
+		inline MatrixData<T, U, D> operator-(const MatrixData<T, U, D>& a) {
 
 		}
-		inline Matrix<T, N> operator-(const T scalar) {
+		inline MatrixData<T, U, D> operator-(const T scalar) {
 
 		}
 
-		inline Matrix<T, N> operator=(const Matrix<T, N>& a) {
-			if (a.data)
+		inline MatrixData<T, U, D> operator=(const MatrixData<T, U, D>& a) {
+			if (a.data) {
 				onemtx::Copy(*this, a);
+			}
 			return *this;
 		}
-		inline Matrix<T, N> operator=(const T scalar) {
+		inline MatrixData<T, U, D> operator=(const T scalar) {
 
 		}
 
-		inline Matrix<T, N> operator+=(const Matrix<T, N>& a) {
+		inline MatrixData<T, U, D> operator+=(const MatrixData<T, U, D>& a) {
 
 		}
-		inline Matrix<T, N> operator+=(const T scalar) {
+		inline MatrixData<T, U, D> operator+=(const T scalar) {
 
 		}
-		inline Matrix<T, N> operator-=(const Matrix<T, N>& a) {
+		inline MatrixData<T, U, D> operator-=(const MatrixData<T, U, D>& a) {
 
 		}
-		inline Matrix<T, N> operator-=(const T scalar) {
+		inline MatrixData<T, U, D> operator-=(const T scalar) {
 
 		}
 	};
 
-	template<typename T, size_t N>
-	void Cross(Matrix<T, N>& a, const Matrix<T, N>& b);
-	template<typename T, size_t N>
-	void Cross(Matrix<T, N>& newMatrix, const Matrix<T, N>& a, const Matrix<T, N>& b);
-	template<typename T, size_t N>
-	void Dot(T& scalar, const Matrix<T, N>& a, const T& b);
-	template<typename T, size_t N>
-	void Dot(T& scalar, const Matrix<T, N>& a, const Matrix<T, N>& b);
+	class Matrix {};
 
-	template<typename T, size_t N>
-	void Transpose(Matrix<T, N>& a);
-	template<typename T, size_t N>
-	void Invert(Matrix<T, N>& a);
 
-	template<typename T, size_t N>
-	void Copy(Matrix<T, N>& a, const Matrix<T, N>& b);
-	template<typename T, size_t N>
-	void Copy(Matrix<T, N>& a, const T& arr, size_t size);
+	/*using Vec2HF = MatrixData < sycl::half, std::array<sycl::half, 2>{1, 1}>;
+	using Vec2F = MatrixData<float, 2>;
+	using Vec2D = MatrixData<double, 2>;
+	using Vec2SC = MatrixData<sycl::schar, 2>;
+	using Vec2UC = MatrixData<sycl::uchar, 2>;
+	using Vec2SI = MatrixData<int32_t, 2>;
+	using Vec2UI = MatrixData<uint32_t, 2>;
 
-	template <typename T, size_t N>
-	constexpr size_t MatrixSizeOfT(const onemtx::Matrix<T, N>& a) noexcept;
+	using Vec3HF = MatrixData<sycl::half, 3>;
+	using Vec3F = MatrixData<float, 3>;
+	using Vec3D = MatrixData<double, 3>;
+	using Vec3SC = MatrixData<sycl::schar, 3>;
+	using Vec3UC = MatrixData<sycl::uchar, 3>;
+	using Vec3SI = MatrixData<int32_t, 3>;
+	using Vec3UI = MatrixData<uint32_t, 3>;*/
+
+	template <typename T, size_t U, std::array<size_t, U> D>
+	void Cross(MatrixData<T, U, D>& a, const MatrixData<T, U, D>& b);
+	template <typename T, size_t U, std::array<size_t, U> D>
+	void Cross(MatrixData<T, U, D>& newMatrix, const MatrixData<T, U, D>& a, const MatrixData<T, U, D>& b);
+	template <typename T, size_t U, std::array<size_t, U> D>
+	void Dot(T& scalar, const MatrixData<T, U, D>& a, const T& b);
+	template <typename T, size_t U, std::array<size_t, U> D>
+	void Dot(T& scalar, const MatrixData<T, U, D>& a, const MatrixData<T, U, D>& b);
+
+	template <typename T, size_t U, std::array<size_t, U> D>
+	void Transpose(MatrixData<T, U, D>& a);
+	template <typename T, size_t U, std::array<size_t, U> D>
+	void Invert(MatrixData<T, U, D>& a);
+
+	template <typename T, size_t U, std::array<size_t, U> D>
+	void Copy(MatrixData<T, U, D>& a, const MatrixData<T, U, D>& b);
+	template <typename T, size_t U, std::array<size_t, U> D>
+	void Copy(MatrixData<T, U, D>& a, const T& arr, size_t size);
+
+	template <typename T, size_t U, std::array<size_t, U> D>
+	constexpr size_t MatrixSizeOfT(const onemtx::MatrixData<T, U, D>& a) noexcept;
+
+	template <typename T, size_t D>
+	constexpr size_t arraySize(T (&)[D]) noexcept; // Might move this of a different file
 
 } // namespace onemtx
 
