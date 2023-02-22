@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <cassert>
+#include <random>
 
 #include "HOMLData.h"
 #include "DPData.h"
@@ -274,36 +275,32 @@ bool OneAPP::HOMLTesting() {
 
 // ------ EXPERIMENTAL ------
 bool OneAPP::SYCLTesting() {
-    constexpr size_t DIMS = 2;
-    constexpr std::array<size_t, DIMS> matrixFormat = { 69, 420 };
+    constexpr size_t DIMS = 3;
+    using MType = float;
+
+    std::random_device rd;
+    std::mt19937 gen(420);
+    std::uniform_real_distribution<MType> unifD(0, 1.0);
 
     std::cout << "Running task: " << m.tasks[SYCLEXP] << '.' << std::endl;
 
-    onemtx::AllocPtr AFunc = &sycl::malloc_host;
+    //onemtx::AllocPtr AFunc = &sycl::malloc_shared;
 
-    onemtx::MatrixData<float, DIMS, matrixFormat> testMtxA(m.computeManager->GetPrimaryQueue(), AFunc);
-    if (testMtxA.data == nullptr) {
-		std::cout << "Failed to allocate memory for matrix A!" << std::endl; // IT IS WHAT IT IS...
-		return false;
-	}
+    onemtx::Matrix<MType, DIMS, DIMS> testMtxA {
+        unifD(gen), unifD(gen), unifD(gen),
+        unifD(gen), unifD(gen), unifD(gen),
+        unifD(gen), unifD(gen), unifD(gen) };
 
-    testMtxA[0][0] = 1.f;
-    testMtxA[1][1] = 2.f;
+    std::cout << "Matrix A:" << testMtxA[0][0] << " | " << testMtxA[0][1] << " | " << testMtxA[0][2] << std::endl;
+    std::cout << "Matrix A:" << testMtxA[1][0] << " | " << testMtxA[1][1] << " | " << testMtxA[1][2] << std::endl;
+    std::cout << "Matrix A:" << testMtxA[2][0] << " | " << testMtxA[2][1] << " | " << testMtxA[2][2] << std::endl;
 
-    std::cout << "Matrix A:" << testMtxA[0][0] << " | " << testMtxA[1][1] << std::endl;
+    testMtxA[0][0] = 69.f;
+    testMtxA[1][1] = 420.f;
 
-    onemtx::MatrixData<float, DIMS, matrixFormat> testMtxB(testMtxA, m.computeManager->GetPrimaryQueue(), AFunc);
-    std::cout << "Matrix B:" << testMtxB[0][0] << " | " << testMtxB[1][1] << std::endl;
-
-    onemtx::MatrixData<float, DIMS, matrixFormat> testMtxC(testMtxB, AFunc);
-    std::cout << "Matrix C:" << testMtxC[0][0] << " | " << testMtxC[1][1] << std::endl;
-
-    testMtxA[0][0] = 420.f;
-    testMtxA[1][1] = 69.f;
-
-    std::cout << "Matrix A:" << testMtxA[0][0] << " | " << testMtxA[1][1] << std::endl;
-    std::cout << "Matrix B:" << testMtxB[0][0] << " | " << testMtxB[1][1] << std::endl;
-    std::cout << "Matrix C:" << testMtxC[0][0] << " | " << testMtxC[1][1] << std::endl;
+    std::cout << "Matrix A:" << testMtxA[0][0] << " | " << testMtxA[0][1] << " | " << testMtxA[0][2] << std::endl;
+    std::cout << "Matrix A:" << testMtxA[1][0] << " | " << testMtxA[1][1] << " | " << testMtxA[1][2] << std::endl;
+    std::cout << "Matrix A:" << testMtxA[2][0] << " | " << testMtxA[2][1] << " | " << testMtxA[2][2] << std::endl;
 
     return true;
 }
