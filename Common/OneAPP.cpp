@@ -286,21 +286,49 @@ bool OneAPP::SYCLTesting() {
 
     //onemtx::AllocPtr AFunc = &sycl::malloc_shared;
 
-    onemtx::Matrix<MType, DIMS, DIMS> testMtxA {
-        unifD(gen), unifD(gen), unifD(gen),
-        unifD(gen), unifD(gen), unifD(gen),
-        unifD(gen), unifD(gen), unifD(gen) };
+    onemtx::Matrix<MType, DIMS, DIMS>* HostMatrix = sycl::malloc_host<onemtx::Matrix<MType, DIMS, DIMS>>(sizeof(onemtx::Matrix<MType, DIMS, DIMS>), m.computeManager->GetPrimaryQueue());
+    onemtx::Matrix<MType, DIMS, DIMS>* DeviceMatrix = sycl::malloc_device<onemtx::Matrix<MType, DIMS, DIMS>>(sizeof(onemtx::Matrix<MType, DIMS, DIMS>), m.computeManager->GetPrimaryQueue());
 
-    std::cout << "Matrix A:" << testMtxA[0][0] << " | " << testMtxA[0][1] << " | " << testMtxA[0][2] << std::endl;
-    std::cout << "Matrix A:" << testMtxA[1][0] << " | " << testMtxA[1][1] << " | " << testMtxA[1][2] << std::endl;
-    std::cout << "Matrix A:" << testMtxA[2][0] << " | " << testMtxA[2][1] << " | " << testMtxA[2][2] << std::endl;
+    for (size_t i = 0; i < DIMS; i++) {
+        for (size_t j = 0; j < DIMS; j++) {
+			*HostMatrix[i][j] = unifD(gen);
+		}
+	}
 
-    testMtxA[0][0] = 69.f;
-    testMtxA[1][1] = 420.f;
+    std::cout << "Matrix A:" << *HostMatrix[0][0] << " | " << *HostMatrix[0][1] << " | " << *HostMatrix[0][2] << std::endl;
+    std::cout << "Matrix A:" << *HostMatrix[1][0] << " | " << *HostMatrix[1][1] << " | " << *HostMatrix[1][2] << std::endl;
+    std::cout << "Matrix A:" << *HostMatrix[2][0] << " | " << *HostMatrix[2][1] << " | " << *HostMatrix[2][2] << std::endl;
 
-    std::cout << "Matrix A:" << testMtxA[0][0] << " | " << testMtxA[0][1] << " | " << testMtxA[0][2] << std::endl;
-    std::cout << "Matrix A:" << testMtxA[1][0] << " | " << testMtxA[1][1] << " | " << testMtxA[1][2] << std::endl;
-    std::cout << "Matrix A:" << testMtxA[2][0] << " | " << testMtxA[2][1] << " | " << testMtxA[2][2] << std::endl;
+    std::cout << "\tCopying matrix A to matrix on device...";
+
+    m.computeManager->GetPrimaryQueue().submit([&](sycl::handler& h) {
+        h.memcpy(&DeviceMatrix, &HostMatrix, sizeof(onemtx::Matrix<MType, DIMS, DIMS>));
+    }).wait();
+
+    std::cout << "done" << std::endl;
+    std::cout << "\tProcessing Matrix on device...";
+
+    m.computeManager->GetPrimaryQueue().submit([&](sycl::handler& h) {
+        h.parallel_for(sycl::range{DIMS, DIMS}, [=](sycl::id<2> i) {
+            *DeviceMatrix[i[0]][i[1]] *= *DeviceMatrix[i[1]][i[0]];
+        });
+    }).wait();
+
+    std::cout << "done" << std::endl;
+    std::cout << "\tCopying Matrix back to host...";
+
+    m.computeManager->GetPrimaryQueue().submit([&](sycl::handler& h) {
+        h.memcpy(&HostMatrix, &DeviceMatrix, sizeof(onemtx::Matrix<MType, DIMS, DIMS>));
+    }).wait();
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "Matrix A:" << *HostMatrix[0][0] << " | " << *HostMatrix[0][1] << " | " << *HostMatrix[0][2] << std::endl;
+    std::cout << "Matrix A:" << *HostMatrix[1][0] << " | " << *HostMatrix[1][1] << " | " << *HostMatrix[1][2] << std::endl;
+    std::cout << "Matrix A:" << *HostMatrix[2][0] << " | " << *HostMatrix[2][1] << " | " << *HostMatrix[2][2] << std::endl;
+
+    free(DeviceMatrix, m.computeManager->GetPrimaryQueue());
+    free(HostMatrix, m.computeManager->GetPrimaryQueue());
 
     return true;
 }
