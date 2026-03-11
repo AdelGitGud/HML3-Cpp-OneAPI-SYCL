@@ -12,23 +12,23 @@
 #include <stdarg.h>
 #include <string.h>
 
+LogManager::LogManager() {
+
+}
+
+LogManager::~LogManager() {
+
+}
+
 bool LogManager::Init() {
-	time_t t;
-	char dateString[51];
-	
-	t = time(NULL);
-	tzset();
-	strftime(dateString, sizeof(dateString) - 1, "%a %b %d %T %Z %Y.txt", localtime(&t));
-	
-	m.logFile = fopen(dateString, "w");
 	return true;
 }
 
 void LogManager::Shutdown() {
-	fclose(m.logFile);
+	
 }
 
-void LogManager::Log(LOG_LEVEL& level, const char* fmt, ...) {
+void LogManager::Log(LOG_LEVEL level, const char* fmt, ...) {
 	va_list ap;
 	time_t t;
 	char dateString[51];

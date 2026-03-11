@@ -6,11 +6,20 @@
 #include <iostream>
 #include <fstream>
 #include <cassert>
+#include <random>
 
 #include "HOMLData.h"
 #include "DPData.h"
 
+#include "LogManager.h"
+#include "ComputeManager.h"
+
 namespace onedal = oneapi::dal;
+
+#define LOG_INFO(fmt, ...) m.logManager->Log(LOG_LEVEL_INFO, fmt __VA_OPT__(,) __VA_ARGS__)
+#define LOG_WARNING(fmt, ...) m.logManager->Log(LOG_LEVEL_WARNING, fmt __VA_OPT__(,) __VA_ARGS__)
+#define LOG_ERROR(fmt, ...) m.logManager->Log(LOG_LEVEL_ERROR, fmt __VA_OPT__(,) __VA_ARGS__)
+#define LOG_FATAL(fmt, ...) m.logManager->Log(LOG_LEVEL_FATAL, fmt __VA_OPT__(,) __VA_ARGS__)
 
 enum TASKS {
     NONE,
@@ -59,14 +68,20 @@ std::ostream& operator<<(std::ostream& stream, const onedal::table& table) {
 };
 
 OneAPP::OneAPP() {
+    m.logManager = new LogManager;
     m.computeManager = new ComputeManager;
 }
 
 OneAPP::~OneAPP() {
     delete m.computeManager;
+    delete m.logManager;
 }
 
 bool OneAPP::Init() {
+    if (!m.logManager->Init()) {
+        return false;
+    }
+    
     if (!m.computeManager->Init()) {
         return false;
     }
@@ -75,6 +90,7 @@ bool OneAPP::Init() {
 
 void OneAPP::Shutdown() {
     m.computeManager->Shutdown();
+    m.logManager->Shutdown();
 }
 
 void OneAPP::Run() {
@@ -107,7 +123,7 @@ void OneAPP::Run() {
 
 size_t OneAPP::PrintDirectoryEntries(const std::string& dir, std::string& lastEntry)
 {
-    std::cout << "Select among available data: " << std::endl;
+    LOG_INFO("Select among available data:\n");
     size_t i = 0;
     for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(dir)) {
         ++i;
@@ -234,7 +250,7 @@ bool OneAPP::ListAndRunTasks() {
 
 // ------ EXPERIMENTAL ------
 bool OneAPP::HOMLTesting() {
-	/*constexpr size_t	TESTSIZE = 20640;
+    /*constexpr size_t  TESTSIZE = 20640;
     constexpr uint64_t  NBROFCAT        = 10;
     constexpr uint64_t  INCOMESPLITS    = 5;
     constexpr uint64_t  INCOMECAT       = 7;
@@ -246,50 +262,74 @@ bool OneAPP::HOMLTesting() {
     // Prints and loads selected data
     std::string selectedData = {};
     if (PrintDirectoryEntries("data", selectedData) > 1) {
-		selectedData = GetUserStringInput();
+        selectedData = GetUserStringInput();
     }
     const std::optional<const onedal::table> data = GetTableFromFile(selectedData);
     if (!data.has_value()) { // User aborted
         return false;
     }
-	PrintBasicTableDescriptor(data.value());
+    PrintBasicTableDescriptor(data.value());
     
     return true;
 }
 
 // ------ EXPERIMENTAL ------
 bool OneAPP::SYCLTesting() {
-    constexpr size_t N = 69;
+    constexpr size_t DIMS = 3;
+    using MType = float;
+
+    std::random_device rd;
+    std::mt19937 gen(420);
+    std::uniform_real_distribution<MType> unifD(0, 1.0);
 
     std::cout << "Running task: " << m.tasks[SYCLEXP] << '.' << std::endl;
 
-    std::array<uint64_t, N> data = { 0 };
+    //onemtx::AllocPtr AFunc = &sycl::malloc_shared;
 
-    {
-        sycl::buffer buffer(data);
+    onemtx::Matrix<MType, DIMS, DIMS>* HostMatrix = sycl::malloc_host<onemtx::Matrix<MType, DIMS, DIMS>>(sizeof(onemtx::Matrix<MType, DIMS, DIMS>), m.computeManager->GetPrimaryQueue());
+    onemtx::Matrix<MType, DIMS, DIMS>* DeviceMatrix = sycl::malloc_device<onemtx::Matrix<MType, DIMS, DIMS>>(sizeof(onemtx::Matrix<MType, DIMS, DIMS>), m.computeManager->GetPrimaryQueue());
 
-        m.computeManager->GetPrimaryQueue().submit([&](sycl::handler& h) {
-            sycl::accessor access(buffer, h);
-
-            h.parallel_for(N, [=](sycl::id<1> i) {
-                access[i] += i + 1;
-            });
-        });
-
-        sycl::host_accessor hostAccess(buffer);
-
-        for (size_t i = 0; i < N; i++) {
-            std::cout << hostAccess[i] << " ";
+    for (size_t i = 0; i < DIMS; i++) {
+        for (size_t j = 0; j < DIMS; j++) {
+            *HostMatrix[i][j] = unifD(gen);
         }
-        std::cout << "\n";
     }
 
-    // myData is updated when myBuffer is
-    // destroyed upon exiting scope
-    for (size_t i = 0; i < N; i++) {
-        std::cout << data[i] << " ";
-    }
-    std::cout << std::endl;
+    std::cout << "Matrix A:" << *HostMatrix[0][0] << " | " << *HostMatrix[0][1] << " | " << *HostMatrix[0][2] << std::endl;
+    std::cout << "Matrix A:" << *HostMatrix[1][0] << " | " << *HostMatrix[1][1] << " | " << *HostMatrix[1][2] << std::endl;
+    std::cout << "Matrix A:" << *HostMatrix[2][0] << " | " << *HostMatrix[2][1] << " | " << *HostMatrix[2][2] << std::endl;
+
+    std::cout << "\tCopying matrix A to matrix on device...";
+
+    m.computeManager->GetPrimaryQueue().submit([&](sycl::handler& h) {
+        h.memcpy(&DeviceMatrix, &HostMatrix, sizeof(onemtx::Matrix<MType, DIMS, DIMS>));
+    }).wait();
+
+    std::cout << "done" << std::endl;
+    std::cout << "\tProcessing Matrix on device...";
+
+    m.computeManager->GetPrimaryQueue().submit([&](sycl::handler& h) {
+        h.parallel_for(sycl::range{DIMS, DIMS}, [=](sycl::id<2> i) {
+            *DeviceMatrix[i[0]][i[1]] *= *DeviceMatrix[i[1]][i[0]];
+        });
+    }).wait();
+
+    std::cout << "done" << std::endl;
+    std::cout << "\tCopying Matrix back to host...";
+
+    m.computeManager->GetPrimaryQueue().submit([&](sycl::handler& h) {
+        h.memcpy(&HostMatrix, &DeviceMatrix, sizeof(onemtx::Matrix<MType, DIMS, DIMS>));
+    }).wait();
+
+    std::cout << "done" << std::endl;
+
+    std::cout << "Matrix A:" << *HostMatrix[0][0] << " | " << *HostMatrix[0][1] << " | " << *HostMatrix[0][2] << std::endl;
+    std::cout << "Matrix A:" << *HostMatrix[1][0] << " | " << *HostMatrix[1][1] << " | " << *HostMatrix[1][2] << std::endl;
+    std::cout << "Matrix A:" << *HostMatrix[2][0] << " | " << *HostMatrix[2][1] << " | " << *HostMatrix[2][2] << std::endl;
+
+    free(DeviceMatrix, m.computeManager->GetPrimaryQueue());
+    free(HostMatrix, m.computeManager->GetPrimaryQueue());
+
     return true;
 }
 
