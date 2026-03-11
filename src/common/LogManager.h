@@ -25,7 +25,7 @@ private:
 	}m;
 
 public:
-	inline void SetFilePrintLevel(LOG_LEVEL& level) { m.filePrintLevel = level;	}
+	inline void SetFilePrintLevel(LOG_LEVEL& level) { m.filePrintLevel = level; }
 	inline LOG_LEVEL GetFilePrintLevel() { return m.filePrintLevel; }
 	
 	inline void SetPrintTimeOnInfoLog(bool& printTime) { m.printTimeOnInfoLog = printTime; }

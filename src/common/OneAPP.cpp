@@ -16,10 +16,10 @@
 
 namespace onedal = oneapi::dal;
 
-#define LOG_INFO(fmt, ...) m.logManager->Log(LOG_LEVEL_INFO, fmt, __VA_ARGS__)
-#define LOG_WARNING(fmt, ...) m.logManager->Log(LOG_LEVEL_WARNING, fmt, __VA_ARGS__)
-#define LOG_ERROR(fmt, ...) m.logManager->Log(LOG_LEVEL_ERROR, fmt, __VA_ARGS__)
-#define LOG_FATAL(fmt, ...) m.logManager->Log(LOG_LEVEL_FATAL, fmt, __VA_ARGS__)
+#define LOG_INFO(fmt, ...) m.logManager->Log(LOG_LEVEL_INFO, fmt __VA_OPT__(,) __VA_ARGS__)
+#define LOG_WARNING(fmt, ...) m.logManager->Log(LOG_LEVEL_WARNING, fmt __VA_OPT__(,) __VA_ARGS__)
+#define LOG_ERROR(fmt, ...) m.logManager->Log(LOG_LEVEL_ERROR, fmt __VA_OPT__(,) __VA_ARGS__)
+#define LOG_FATAL(fmt, ...) m.logManager->Log(LOG_LEVEL_FATAL, fmt __VA_OPT__(,) __VA_ARGS__)
 
 enum TASKS {
     NONE,
@@ -74,13 +74,13 @@ OneAPP::OneAPP() {
 
 OneAPP::~OneAPP() {
     delete m.computeManager;
-	delete m.logManager;
+    delete m.logManager;
 }
 
 bool OneAPP::Init() {
-	if (!m.logManager->Init()) {
-		return false;
-	}
+    if (!m.logManager->Init()) {
+        return false;
+    }
     
     if (!m.computeManager->Init()) {
         return false;
@@ -90,7 +90,7 @@ bool OneAPP::Init() {
 
 void OneAPP::Shutdown() {
     m.computeManager->Shutdown();
-	m.logManager->Shutdown();
+    m.logManager->Shutdown();
 }
 
 void OneAPP::Run() {
@@ -123,7 +123,7 @@ void OneAPP::Run() {
 
 size_t OneAPP::PrintDirectoryEntries(const std::string& dir, std::string& lastEntry)
 {
-	LOG_INFO("Select among available data:\n");
+    LOG_INFO("Select among available data:\n");
     size_t i = 0;
     for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(dir)) {
         ++i;
@@ -250,7 +250,7 @@ bool OneAPP::ListAndRunTasks() {
 
 // ------ EXPERIMENTAL ------
 bool OneAPP::HOMLTesting() {
-	/*constexpr size_t	TESTSIZE = 20640;
+    /*constexpr size_t  TESTSIZE = 20640;
     constexpr uint64_t  NBROFCAT        = 10;
     constexpr uint64_t  INCOMESPLITS    = 5;
     constexpr uint64_t  INCOMECAT       = 7;
@@ -262,13 +262,13 @@ bool OneAPP::HOMLTesting() {
     // Prints and loads selected data
     std::string selectedData = {};
     if (PrintDirectoryEntries("data", selectedData) > 1) {
-		selectedData = GetUserStringInput();
+        selectedData = GetUserStringInput();
     }
     const std::optional<const onedal::table> data = GetTableFromFile(selectedData);
     if (!data.has_value()) { // User aborted
         return false;
     }
-	PrintBasicTableDescriptor(data.value());
+    PrintBasicTableDescriptor(data.value());
     
     return true;
 }
@@ -291,9 +291,9 @@ bool OneAPP::SYCLTesting() {
 
     for (size_t i = 0; i < DIMS; i++) {
         for (size_t j = 0; j < DIMS; j++) {
-			*HostMatrix[i][j] = unifD(gen);
-		}
-	}
+            *HostMatrix[i][j] = unifD(gen);
+        }
+    }
 
     std::cout << "Matrix A:" << *HostMatrix[0][0] << " | " << *HostMatrix[0][1] << " | " << *HostMatrix[0][2] << std::endl;
     std::cout << "Matrix A:" << *HostMatrix[1][0] << " | " << *HostMatrix[1][1] << " | " << *HostMatrix[1][2] << std::endl;
