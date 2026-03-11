@@ -3,10 +3,9 @@
 ### Common Dependencies:
 > OneAPI (SYCL, DAL, DPCPP)  
 > X64  
-> Visual Studio (Will move to CMake sooner than later)  
 
 ### Client Dependencies:
-> Vulkan
+> Vulkan  
 > Dear ImGui  
 
 ### License:
