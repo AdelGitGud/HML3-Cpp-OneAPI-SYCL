@@ -27,10 +27,25 @@ public:
 private:
     inline void AddDevice(int (*selector)(const sycl::device&), const std::function<void(sycl::exception_list)>& AsyncHandler) {
         try {
+            sycl::queue queue(selector, AsyncHandler);
+            const sycl::device device = queue.get_device();
+
+            std::cout << "[ComputeManager] Added"
+                    << ": " << device.get_info<sycl::info::device::name>()
+                    << '\n';
             m.queues.push_back(sycl::queue{ sycl::ext::oneapi::detail::select_device(selector), AsyncHandler });
         }
+        catch (const sycl::exception& e) {
+            std::cerr << "[ComputeManager] Skipped"
+                    << ": " << e.what() << '\n';
+        }
+        catch (const std::exception& e) {
+            std::cerr << "[ComputeManager] Skipped"
+                    << ": " << e.what() << '\n';
+        }
         catch (...) {
-            return;
+            std::cerr << "[ComputeManager] Skipped"
+                    << ": unknown exception\n";
         }
     };
 };

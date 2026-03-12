@@ -20,6 +20,8 @@ public:
     void Run();
 
 private:
+    bool RunInit();
+
     size_t PrintDirectoryEntries(const std::string& dir, std::string& lastEntry);
     std::optional<const oneapi::dal::table> GetTableFromFile(const std::string& name, const std::string& path = "data/"); // Embarrassing test function
     void PrintBasicTableDescriptor(const oneapi::dal::table& table);

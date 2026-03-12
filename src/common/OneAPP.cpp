@@ -93,30 +93,47 @@ void OneAPP::Shutdown() {
     m.logManager->Shutdown();
 }
 
+bool OneAPP::RunInit() {
+    if (!ListAndSelectDevices()) {
+        return false;
+    }
+
+    if (!ListAndRunTasks()) {
+        return false;
+    }
+
+    return true;
+}
+
 void OneAPP::Run() {
-    if (!ListAndSelectDevices()) { // User aborted
-        return;
-    }
-
-    if (!ListAndRunTasks()) {// User aborted or error in selecting task
-        return;
-    }
-
-    // Restart to device selection if user doesn't wish to exist
-    char exitInput;
-    std::cout << "Exit?" << "\t[Y]es/[N]o" << std::endl;
-    while (std::cin.get(exitInput)) {
-        if (std::cin.eof()) {
+    while (true) {
+        if (!RunInit()) {
             std::cout << "User aborted!" << std::endl;
             return;
         }
-        else if ((exitInput = tolower(exitInput)) == 'n') {
+
+        while (true) {
+            std::cout << "Exit?\t[Y]es/[N]o" << std::endl;
+
+            char exitInput {};
+            if (!(std::cin >> exitInput)) {
+                std::cout << "User aborted!" << std::endl;
+                return;
+            }
+
+            exitInput = static_cast<char>(std::tolower(static_cast<unsigned char>(exitInput)));
+
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            Run();
-            return;
-        }
-        else if (exitInput == 'y') {
-            return;
+
+            if (exitInput == 'y') {
+                return;
+            }
+
+            if (exitInput == 'n') {
+                break;
+            }
+
+            std::cout << "Invalid input, please enter Y or N." << std::endl;
         }
     }
 }

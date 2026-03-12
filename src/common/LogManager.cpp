@@ -26,7 +26,7 @@ bool LogManager::Init() {
 
 	t = time(NULL);
 	tzset();
-	strftime(dateString, sizeof(dateString) - 1, "%a %b %d %T %Z %Y.txt", localtime(&t));
+	strftime(dateString, sizeof(dateString) - 1, "%a %b %d %T %Z %Y.log", localtime(&t));
 
 	m.logFile = fopen(dateString, "w");
 	return true;
